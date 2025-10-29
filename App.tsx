@@ -1,11 +1,17 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+// File App.tsx
+import { StyleSheet, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import AuthStack from './src/navigation/AuthStack';
+import Toast from 'react-native-toast-message'; // ✅ Cần import ĐÚNG
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
+    <View style={styles.container}> 
+      <NavigationContainer>
+        {/* AuthStack là con trực tiếp của NavigationContainer (Rất đúng) */}
+        <AuthStack /> 
+      </NavigationContainer>
+      <Toast /> 
     </View>
   );
 }
@@ -13,8 +19,5 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });
