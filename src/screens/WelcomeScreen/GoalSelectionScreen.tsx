@@ -6,8 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../navigation/AuthStack';
-import foxImage from '../../assets/images/logo/Elisa.png';
+import { AuthStackParamList } from '../../navigation/AuthStack';
+import foxImage from '../../../assets/images/logo/Elisa.png';
 
 // Định nghĩa kiểu Props cho màn hình này
 type GoalSelectionScreenProps = NativeStackScreenProps<AuthStackParamList, 'GoalSelection'>;
@@ -27,14 +27,14 @@ const goals = [
 const GoalSelectionScreen: React.FC<GoalSelectionScreenProps> = ({ navigation }) => {
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
 
-    // Lấy data từ navigation params
-    const route = useRoute<GoalSelectionRouteProp>();
-    const { languageName } = route.params;
+  // Lấy data từ navigation params
+  const route = useRoute<GoalSelectionRouteProp>();
+  const { languageName } = route.params;
 
   const handleGoalToggle = (goalId: string) => {
     // Cho phép chọn nhiều mục tiêu
-    setSelectedGoals(prev => 
-      prev.includes(goalId) 
+    setSelectedGoals(prev =>
+      prev.includes(goalId)
         ? prev.filter(id => id !== goalId) // Bỏ chọn
         : [...prev, goalId] // Chọn
     );
@@ -67,7 +67,7 @@ const GoalSelectionScreen: React.FC<GoalSelectionScreenProps> = ({ navigation })
           <FontAwesome5 name={goal.icon} size={22} color={isSelected ? '#4C8BF5' : '#888'} style={styles.goalIcon} />
           <Text style={styles.goalText}>{goal.label}</Text>
         </View>
-        
+
         {/* Checkbox (Mô phỏng) */}
         <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
           {isSelected && <Ionicons name="checkmark-sharp" size={18} color="white" />}
@@ -91,25 +91,25 @@ const GoalSelectionScreen: React.FC<GoalSelectionScreenProps> = ({ navigation })
         </View>
 
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          
+
           {/* Phần Chatbot và Câu hỏi */}
           <View style={styles.chatbotArea}>
             {/* Hình ảnh Chatbot (Fox Elisa) */}
-             <Image 
-                source={foxImage}
-                style={styles.chatbotIcon} 
+            <Image
+              source={foxImage}
+              style={styles.chatbotIcon}
             />
             <View style={styles.speechBubble}>
-                <Text style={styles.speechText}>Tại sao bạn học {languageName}?</Text>
+              <Text style={styles.speechText}>Tại sao bạn học {languageName}?</Text>
             </View>
           </View>
-          
+
           {/* Danh sách Mục tiêu */}
           {goals.map(goal => (
             <GoalItem key={goal.id} goal={goal} />
           ))}
-          
-          <View style={{ height: 50 }} /> 
+
+          <View style={{ height: 50 }} />
         </ScrollView>
       </View>
 
@@ -119,7 +119,7 @@ const GoalSelectionScreen: React.FC<GoalSelectionScreenProps> = ({ navigation })
           style={[
             styles.continueButton,
             // Nút sáng màu khi có mục tiêu được chọn
-            { backgroundColor: selectedGoals.length > 0 ? '#3B82F6' : '#E5E5E5' } 
+            { backgroundColor: selectedGoals.length > 0 ? '#3B82F6' : '#E5E5E5' }
           ]}
           onPress={handleContinue}
           disabled={selectedGoals.length === 0}
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
-  
+
   // --- Header & Progress Bar ---
   header: {
     flexDirection: 'row',
@@ -179,10 +179,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   chatbotIcon: {
-      width: 100,
-      height: 100,
-      borderRadius: 30, 
-      // Style cho ảnh Fox Elisa
+    width: 100,
+    height: 100,
+    borderRadius: 30,
+    // Style cho ảnh Fox Elisa
   },
   speechBubble: {
     backgroundColor: 'white',
@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     padding: 15,
     // Tạo đuôi bong bóng thoại
     shadowColor: '#171717',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
   },
-  
+
   // --- Goal Items ---
   goalItem: {
     flexDirection: 'row',
@@ -217,13 +217,13 @@ const styles = StyleSheet.create({
   },
   goalItemSelected: {
     borderColor: '#3B82F6', // Màu xanh lá Duolingo nhạt
-    backgroundColor: '#F7FFF0', 
+    backgroundColor: '#F7FFF0',
     borderWidth: 3,
   },
   goalContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   goalIcon: {
     marginRight: 20,
@@ -237,17 +237,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   checkbox: {
-      width: 25,
-      height: 25,
-      borderRadius: 13,
-      borderWidth: 2,
-      borderColor: '#AFAFAF',
-      justifyContent: 'center',
-      alignItems: 'center',
+    width: 25,
+    height: 25,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: '#AFAFAF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   checkboxSelected: {
-      backgroundColor: '#3B82F6',
-      borderColor: '#3B82F6',
+    backgroundColor: '#3B82F6',
+    borderColor: '#3B82F6',
   },
 
   // --- Footer & Button ---

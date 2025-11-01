@@ -5,8 +5,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform }
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../navigation/AuthStack';
-import foxImage from '../../assets/images/logo/Elisa.png';
+import { AuthStackParamList } from '../../navigation/AuthStack';
+import foxImage from '../../../assets/images/logo/Elisa.png';
 
 // Định nghĩa kiểu Props cho màn hình này
 type CourseSelectionScreenProps = NativeStackScreenProps<AuthStackParamList, 'CourseSelection'>;
@@ -14,12 +14,12 @@ type CourseSelectionScreenProps = NativeStackScreenProps<AuthStackParamList, 'Co
 // Dữ liệu giả định cho các khóa học
 const courses = [
   // LƯU Ý: ĐƯỜNG DẪN CỜ CẦN CHÍNH XÁC VỚI DỰ ÁN CỦA BẠN
-  { name: "Tiếng Anh", flag: require('../../assets/images/flags/england.png') },
-  { name: "Tiếng Trung", flag: require('../../assets/images/flags/china.png') },
-  { name: "Tiếng Tây Ban Nha", flag: require('../../assets/images/flags/spain.png') },
-  { name: "Tiếng Pháp", flag: require('../../assets/images/flags/france.png') },
-  { name: "Tiếng Hàn", flag: require('../../assets/images/flags/korea.png') },
-  { name: "Tiếng Nhật", flag: require('../../assets/images/flags/japan.png') },
+  { name: "Tiếng Anh", flag: require('../../../assets/images/flags/england.png') },
+  { name: "Tiếng Trung", flag: require('../../../assets/images/flags/china.png') },
+  { name: "Tiếng Tây Ban Nha", flag: require('../../../assets/images/flags/spain.png') },
+  { name: "Tiếng Pháp", flag: require('../../../assets/images/flags/france.png') },
+  { name: "Tiếng Hàn", flag: require('../../../assets/images/flags/korea.png') },
+  { name: "Tiếng Nhật", flag: require('../../../assets/images/flags/japan.png') },
 ];
 
 const CourseSelectionScreen: React.FC<CourseSelectionScreenProps> = ({ navigation }) => {
@@ -69,24 +69,24 @@ const CourseSelectionScreen: React.FC<CourseSelectionScreenProps> = ({ navigatio
           {/* Phần Chatbot và Câu hỏi */}
           <View style={styles.chatbotArea}>
             {/* Tương tự hình ảnh Duolingo */}
-            <Image 
-                source={foxImage} // Bạn cần thêm ảnh này
-                style={styles.chatbotIcon} 
+            <Image
+              source={foxImage} // Bạn cần thêm ảnh này
+              style={styles.chatbotIcon}
             />
             <View style={styles.speechBubble}>
-                <Text style={styles.speechText}>Bạn muốn học gì nhỉ?</Text>
+              <Text style={styles.speechText}>Bạn muốn học gì nhỉ?</Text>
             </View>
           </View>
-          
+
           <Text style={styles.sectionTitle}>Dành cho người nói tiếng Việt</Text>
-          
+
           {/* Danh sách Khóa học */}
           {courses.map(course => (
             <CourseItem key={course.name} name={course.name} flag={course.flag} />
           ))}
-          
+
           {/* Khoảng trống đệm */}
-          <View style={{ height: 120 }} /> 
+          <View style={{ height: 120 }} />
         </ScrollView>
       </View>
 
@@ -95,7 +95,7 @@ const CourseSelectionScreen: React.FC<CourseSelectionScreenProps> = ({ navigatio
         <TouchableOpacity
           style={[
             styles.continueButton,
-            { backgroundColor: selectedCourse ? '#3B82F6' : '#E5E5E5' } 
+            { backgroundColor: selectedCourse ? '#3B82F6' : '#E5E5E5' }
           ]}
           onPress={handleContinue}
           disabled={!selectedCourse}
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
-  
+
   // --- Header & Progress Bar ---
   header: {
     flexDirection: 'row',
@@ -155,9 +155,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   chatbotIcon: {
-      width: 100,
-      height: 100,
-      borderRadius: 30, // Giả định là ảnh tròn
+    width: 100,
+    height: 100,
+    borderRadius: 30, // Giả định là ảnh tròn
   },
   speechBubble: {
     backgroundColor: 'white',
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     padding: 15,
     // Tạo đuôi bong bóng thoại
     shadowColor: '#171717',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
   },
-  
+
   // --- Section Title ---
   sectionTitle: {
     fontSize: 18,

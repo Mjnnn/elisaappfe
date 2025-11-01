@@ -6,8 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../navigation/AuthStack';
-import foxImage from '../../assets/images/logo/Elisa.png';
+import { AuthStackParamList } from '../../navigation/AuthStack';
+import foxImage from '../../../assets/images/logo/Elisa.png';
 
 // Định nghĩa kiểu Props cho màn hình này
 type LevelSelectionScreenProps = NativeStackScreenProps<AuthStackParamList, 'LevelSelection'>;
@@ -26,15 +26,15 @@ const levels = [
 
 const LevelSelectionScreen: React.FC<LevelSelectionScreenProps> = ({ navigation }) => {
   const [selectedLevelId, setSelectedLevelId] = useState<number | null>(null);
-  
-    // Lấy data từ navigation params
-    const route = useRoute<LevelSelectionRouteProp>();
-    const { languageName, selectedGoals } = route.params;
 
-    React.useEffect(() => {
-      console.log('Ngôn ngữ đã chọn:', learningLanguage);
-      console.log('Lý do đã chọn:', selectedGoals);
-      // Bạn có thể lưu goalsChosen vào state toàn cục nếu cần.
+  // Lấy data từ navigation params
+  const route = useRoute<LevelSelectionRouteProp>();
+  const { languageName, selectedGoals } = route.params;
+
+  React.useEffect(() => {
+    console.log('Ngôn ngữ đã chọn:', learningLanguage);
+    console.log('Lý do đã chọn:', selectedGoals);
+    // Bạn có thể lưu goalsChosen vào state toàn cục nếu cần.
   }, []);
 
   // Lấy ngôn ngữ đã chọn từ màn hình trước (ví dụ)
@@ -45,11 +45,11 @@ const LevelSelectionScreen: React.FC<LevelSelectionScreenProps> = ({ navigation 
       console.log('Trình độ đã chọn:', selectedLevelId);
       // TODO: Chuyển sang màn hình cuối cùng của Onboarding (ví dụ: màn hình tạo tài khoản)
       // navigation.navigate('RegisterScreen'); 
-        navigation.navigate('DailyGoal', {
-          languageName: learningLanguage,
-          selectedGoals: selectedGoals,
-          selectedLevel: selectedLevelId,
-        });
+      navigation.navigate('DailyGoal', {
+        languageName: learningLanguage,
+        selectedGoals: selectedGoals,
+        selectedLevel: selectedLevelId,
+      });
     } else {
       alert("Vui lòng chọn trình độ của bạn!");
     }
@@ -68,18 +68,18 @@ const LevelSelectionScreen: React.FC<LevelSelectionScreenProps> = ({ navigation 
       >
         {/* Biểu tượng Thanh sóng (Mô phỏng bằng FontAwesome) */}
         <View style={styles.iconContainer}>
-            {[...Array(5)].map((_, index) => (
-                <View 
-                    key={index} 
-                    style={[
-                        styles.bar, 
-                        // Thanh sóng đậm khi progress <= level.progress
-                        index < level.progress && styles.barFilled,
-                        // Điều chỉnh chiều cao cho từng thanh
-                        { height: 10 + index * 5 } 
-                    ]} 
-                />
-            ))}
+          {[...Array(5)].map((_, index) => (
+            <View
+              key={index}
+              style={[
+                styles.bar,
+                // Thanh sóng đậm khi progress <= level.progress
+                index < level.progress && styles.barFilled,
+                // Điều chỉnh chiều cao cho từng thanh
+                { height: 10 + index * 5 }
+              ]}
+            />
+          ))}
         </View>
         <Text style={styles.levelText}>{level.label}</Text>
       </TouchableOpacity>
@@ -101,24 +101,24 @@ const LevelSelectionScreen: React.FC<LevelSelectionScreenProps> = ({ navigation 
         </View>
 
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          
+
           {/* Phần Chatbot và Câu hỏi */}
           <View style={styles.chatbotArea}>
-            <Image 
-                source={foxImage} // Hoặc ảnh chatbot Duolingo nếu bạn dùng
-                style={styles.chatbotIcon} 
+            <Image
+              source={foxImage} // Hoặc ảnh chatbot Duolingo nếu bạn dùng
+              style={styles.chatbotIcon}
             />
             <View style={styles.speechBubble}>
-                <Text style={styles.speechText}>Trình độ {learningLanguage} của bạn ở mức nào?</Text>
+              <Text style={styles.speechText}>Trình độ {learningLanguage} của bạn ở mức nào?</Text>
             </View>
           </View>
-          
+
           {/* Danh sách Trình độ */}
           {levels.map(level => (
             <LevelItem key={level.id} level={level} />
           ))}
-          
-          <View style={{ height: 50 }} /> 
+
+          <View style={{ height: 50 }} />
         </ScrollView>
       </View>
 
@@ -128,7 +128,7 @@ const LevelSelectionScreen: React.FC<LevelSelectionScreenProps> = ({ navigation 
           style={[
             styles.continueButton,
             // Nút sáng màu khi có cấp độ được chọn
-            { backgroundColor: selectedLevelId !== null ? '#3B82F6' : '#E5E5E5' } 
+            { backgroundColor: selectedLevelId !== null ? '#3B82F6' : '#E5E5E5' }
           ]}
           onPress={handleContinue}
           disabled={selectedLevelId === null}
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
-  
+
   // --- Header & Progress Bar ---
   header: {
     flexDirection: 'row',
@@ -188,17 +188,17 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   chatbotIcon: {
-      width: 100,
-      height: 100,
-      borderRadius: 30, 
-      // Style cho ảnh chatbot
+    width: 100,
+    height: 100,
+    borderRadius: 30,
+    // Style cho ảnh chatbot
   },
   speechBubble: {
     backgroundColor: 'white',
     borderRadius: 15,
     padding: 15,
     shadowColor: '#171717',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
   },
-  
+
   // --- Level Items ---
   levelItem: {
     flexDirection: 'row',
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   },
   levelItemSelected: {
     borderColor: '#3B82F6', // Màu xanh lá Duolingo nhạt
-    backgroundColor: '#F7FFF0', 
+    backgroundColor: '#F7FFF0',
     borderWidth: 3,
   },
   iconContainer: {
