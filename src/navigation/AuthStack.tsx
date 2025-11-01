@@ -4,13 +4,15 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 // Import các màn hình của bạn
-import WelcomeScreen from '../screens/WelcomeScreen'; 
-import LoginScreen from '../screens/LoginScreen';
-import CourseSelectionScreen from '../screens/CourseSelectionScreen';
-import GoalSelectionScreen from '../screens/GoalSelectionScreen';
-import LevelSelectionScreen from '../screens/LevelSelectionScreen';
-import DailyGoalScreen from '../screens/DailyGoalScreen';
-import RegisterScreen from '../screens/RegisterScreen';
+import WelcomeScreen from '../screens/WelcomeScreen/WelcomeScreen';
+import LoginScreen from '../screens/AuthScreen/LoginScreen';
+import CourseSelectionScreen from '../screens/WelcomeScreen/CourseSelectionScreen';
+import GoalSelectionScreen from '../screens/WelcomeScreen/GoalSelectionScreen';
+import LevelSelectionScreen from '../screens/WelcomeScreen/LevelSelectionScreen';
+import DailyGoalScreen from '../screens/WelcomeScreen/DailyGoalScreen';
+import RegisterScreen from '../screens/AuthScreen/RegisterScreen';
+import PlacementQuizScreen from '../screens/WelcomeScreen/PlacementQuizScreen';
+import QuizResultsScreen from '../screens/WelcomeScreen/QuizResultsScreen';
 
 // Định nghĩa kiểu dữ liệu cho các route (dùng TypeScript)
 export type AuthStackParamList = {
@@ -19,15 +21,25 @@ export type AuthStackParamList = {
   Login: undefined;
   CourseSelection: undefined;
   GoalSelection: { languageName: string };
-  LevelSelection: { 
-    languageName: string; 
+  LevelSelection: {
+    languageName: string;
     selectedGoals: string[]; // Mảng chứa ID các mục tiêu đã chọn
   };
-  DailyGoal: { 
-    languageName: string; 
-    selectedGoals: string[]; 
-    selectedLevel: number; 
+  DailyGoal: {
+    languageName: string;
+    selectedGoals: string[];
+    selectedLevel: number;
   };
+  PlacementQuiz: {
+    languageName: string;
+    selectedGoals: string[];
+    selectedLevel: number;
+  };
+  QuizResults: {
+    quizAnswers: { [questionId: number]: string }; // Đối tượng chứa câu trả lời của người dùng
+    learningLanguage: string;
+  };
+
   // Bạn có thể thêm các màn hình khác như Register, ForgotPassword, v.v.
 };
 
@@ -47,6 +59,8 @@ const AuthStack: React.FC = () => {
       <Stack.Screen name="GoalSelection" component={GoalSelectionScreen} />
       <Stack.Screen name="LevelSelection" component={LevelSelectionScreen} />
       <Stack.Screen name="DailyGoal" component={DailyGoalScreen} />
+      <Stack.Screen name="PlacementQuiz" component={PlacementQuizScreen} />
+      <Stack.Screen name="QuizResults" component={QuizResultsScreen} />
     </Stack.Navigator>
   );
 };

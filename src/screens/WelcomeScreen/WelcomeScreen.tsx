@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../navigation/AuthStack';
-import foxImage from '../../assets/images/logo/Elisa.png';
+import { AuthStackParamList } from '../../navigation/AuthStack';
+import foxImage from '../../../assets/images/logo/Elisa.png';
 
 // Khai báo kiểu dữ liệu cho props (nếu có, ở đây không cần)
 // type WelcomeScreenProps = {};
@@ -26,25 +26,25 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
     // SafeAreaView giúp nội dung không bị che bởi notch/thanh trạng thái
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        
+
         {/* Khu vực Hình ảnh */}
-        <Image 
+        <Image
           // Cần thay thế bằng nguồn hình ảnh thực tế của bạn
-          source={foxImage} 
-          style={styles.logo} 
-          resizeMode="contain" 
+          source={foxImage}
+          style={styles.logo}
+          resizeMode="contain"
         />
-        
+
         {/* Khu vực Văn bản */}
         <Text style={styles.title}>Elisa</Text>
         <Text style={styles.subtitle}>Học miễn phí. Suốt đời.</Text>
-        
+
         {/* Khu vực Nút bấm */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.primaryButton} onPress={handleStart}>
             <Text style={styles.primaryButtonText}>BẮT ĐẦU NGAY</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.secondaryButton} onPress={handleLogin}>
             <Text style={styles.secondaryButtonText}>TÔI ĐÃ CÓ TÀI KHOẢN</Text>
           </TouchableOpacity>
@@ -69,8 +69,8 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   logo: {
-    width: 300, 
-    height: 300, 
+    width: 300,
+    height: 300,
     marginBottom: 20,
   },
   title: {
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
     shadowColor: '#171717', // Thêm bóng nhẹ
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
     elevation: 5, // Dành cho Android

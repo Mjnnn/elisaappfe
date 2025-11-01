@@ -9,7 +9,7 @@ import {
   Platform,
   Image
 } from 'react-native';
-import foxImage from '../../assets/images/logo/Elisa.png';
+import foxImage from '../../../assets/images/logo/Elisa.png';
 import { SafeAreaView } from 'react-native-safe-area-context';
 // Import icons từ thư viện Expo Vector Icons
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
@@ -17,7 +17,7 @@ import { Ionicons, FontAwesome } from '@expo/vector-icons';
 // Navigation
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../navigation/AuthStack';
+import { AuthStackParamList } from '../../navigation/AuthStack';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
 

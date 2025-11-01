@@ -6,9 +6,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../navigation/AuthStack';
+import { AuthStackParamList } from '../../navigation/AuthStack';
 import Toast from 'react-native-toast-message';
-import foxImage from '../../assets/images/logo/Elisa.png';
+import foxImage from '../../../assets/images/logo/Elisa.png';
 
 // Định nghĩa kiểu Props cho màn hình này
 type DailyGoalScreenProps = NativeStackScreenProps<AuthStackParamList, 'DailyGoal'>;
@@ -26,40 +26,45 @@ const goals = [
 
 const DailyGoalScreen: React.FC<DailyGoalScreenProps> = ({ navigation }) => {
   const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
-  
+
   // Nhận tham số từ màn hình trước
   const route = useRoute<DailyGoalRouteProp>();
   const learningLanguage = route.params?.languageName ?? 'Tiếng Anh';
   const goalsChosen = route.params?.selectedGoals ?? [];
   const levelChosen = route.params?.selectedLevel ?? 0; // Giả định LevelSelection truyền ID (number)
-  
+
   const handleContinue = () => {
     if (selectedGoalId !== null) {
       console.log('Mục tiêu hàng ngày đã chọn:', selectedGoalId);
-      
+
       // BƯỚC CUỐI CÙNG TRONG ONBOARDING:
       // TODO: Gửi toàn bộ dữ liệu (Ngôn ngữ, Goals, Level, DailyGoal) lên API Spring Boot.
       // Sau đó, chuyển sang màn hình chính của ứng dụng (Home/Tabs).
 
       const selectedGoal = goals.find(goal => goal.id === selectedGoalId);
       if (selectedGoal) {
-                Toast.show({
-            type: 'success', // 👈 Loại thông báo có icon thành công
-            
-            // Tiêu đề lớn
-            text1: '🎉 Đã hoàn thành Onboarding!', 
-            
-            // Nội dung nhỏ hơn
-            text2: `Ngôn ngữ: ${learningLanguage}, Mục tiêu: ${selectedGoal.time}`,
-            
-            // Thời gian hiển thị (mili giây)
-            visibilityTime: 2000, 
-            
-            // Vị trí
-            position: 'top',
-            topOffset: 80,
-            });
-        }
+        Toast.show({
+          type: 'success', // 👈 Loại thông báo có icon thành công
+
+          // Tiêu đề lớn
+          text1: '🎉 Đã hoàn thành Onboarding!',
+
+          // Nội dung nhỏ hơn
+          text2: `Ngôn ngữ: ${learningLanguage}, Mục tiêu: ${selectedGoal.time}`,
+
+          // Thời gian hiển thị (mili giây)
+          visibilityTime: 2000,
+
+          // Vị trí
+          position: 'top',
+          topOffset: 80,
+        });
+        navigation.navigate('PlacementQuiz', {
+          languageName: learningLanguage,
+          selectedGoals: goalsChosen,
+          selectedLevel: levelChosen,
+        });
+      }
     } else {
       alert("Vui lòng chọn mục tiêu hàng ngày của bạn!");
     }
@@ -97,24 +102,24 @@ const DailyGoalScreen: React.FC<DailyGoalScreenProps> = ({ navigation }) => {
         </View>
 
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          
+
           {/* Phần Chatbot và Câu hỏi */}
           <View style={styles.chatbotArea}>
-            <Image 
-                source={foxImage} 
-                style={styles.chatbotIcon} 
+            <Image
+              source={foxImage}
+              style={styles.chatbotIcon}
             />
             <View style={styles.speechBubble}>
-                <Text style={styles.speechText}>Mục tiêu hàng ngày của bạn là gì nhỉ?</Text>
+              <Text style={styles.speechText}>Mục tiêu hàng ngày của bạn là gì nhỉ?</Text>
             </View>
           </View>
-          
+
           {/* Danh sách Mục tiêu Thời gian */}
           {goals.map(goal => (
             <GoalItem key={goal.id} goal={goal} />
           ))}
-          
-          <View style={{ height: 100 }} /> 
+
+          <View style={{ height: 100 }} />
         </ScrollView>
       </View>
 
@@ -152,7 +157,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
   },
-  
+
   // --- Header & Progress Bar ---
   header: {
     flexDirection: 'row',
@@ -183,16 +188,16 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   chatbotIcon: {
-      width: 100,
-      height: 100,
-      borderRadius: 30, 
+    width: 100,
+    height: 100,
+    borderRadius: 30,
   },
   speechBubble: {
     backgroundColor: 'white',
     borderRadius: 15,
     padding: 15,
     shadowColor: '#171717',
-    shadowOffset: {width: 0, height: 1},
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
@@ -203,7 +208,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
   },
-  
+
   // --- Goal Items ---
   goalItem: {
     flexDirection: 'row',
@@ -219,7 +224,7 @@ const styles = StyleSheet.create({
   },
   goalItemSelected: {
     borderColor: '#3B82F6', // Màu xanh lá nhạt khi được chọn
-    backgroundColor: '#F7FFF0', 
+    backgroundColor: '#F7FFF0',
     borderWidth: 3,
   },
   goalTimeText: {
