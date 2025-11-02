@@ -11,43 +11,55 @@ import {
   Platform,
   KeyboardAvoidingView,
   ScrollView,
-  Alert // Dùng Alert cho thông báo lỗi
+  Alert
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import foxImage from '../../../assets/images/logo/Elisa.png';
+import authService from '../../services/authService';
 
 const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<any>();
+
   const [fullName, setFullName] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [confirmPassword, setConfirmPassword] = useState<string>(''); // ✨ INPUT MỚI
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false); // ✨ STATE MỚI
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const handleRegister = () => {
-    // 1. Kiểm tra điền đầy đủ thông tin
+  const handleRegister = async () => {
     if (!fullName || !email || !password || !confirmPassword) {
-      Alert.alert('Lỗi Đăng ký', 'Vui lòng điền đầy đủ tất cả các thông tin.');
+      Alert.alert('Lỗi Đăng ký', 'Vui lòng điền đầy đủ tất cả thông tin.');
       return;
     }
 
-    // 2. Kiểm tra Mật khẩu và Xác nhận Mật khẩu
     if (password !== confirmPassword) {
-      Alert.alert('Lỗi Mật khẩu', 'Mật khẩu và Xác nhận Mật khẩu không khớp nhau.');
+      Alert.alert('Lỗi Mật khẩu', 'Mật khẩu và Xác nhận mật khẩu không khớp.');
       return;
     }
 
-    // TODO: Triển khai logic gửi dữ liệu lên API
-    console.log('Họ và Tên:', fullName);
-    console.log('Email:', email);
-    console.log('Mật khẩu:', password);
+    const payload = { fullName, email, password };
 
-    // Xử lý thành công
-    Alert.alert('Thành công', 'Đăng ký tài khoản thành công!');
-    navigation.navigate('CourseSelection');
+    try {
+      setLoading(true);
+      await authService.signUp(payload);
+
+      Alert.alert('Thành công', 'Đăng ký tài khoản thành công!');
+      navigation.navigate('CourseSelection');// điều hướng về Login
+    } catch (error: any) {
+      console.log("Register error:", error.response?.data || error.message);
+
+      const message =
+        error.response?.data?.message ||
+        "Đăng ký thất bại. Vui lòng thử lại sau.";
+
+      Alert.alert("Đăng ký thất bại", message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -57,7 +69,7 @@ const RegisterScreen: React.FC = () => {
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
         <ScrollView contentContainerStyle={styles.scrollViewContent}>
-          {/* Header Bar */}
+          {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <Ionicons name="close" size={28} color="#4B4B4B" />
@@ -68,27 +80,20 @@ const RegisterScreen: React.FC = () => {
 
           {/* Logo */}
           <View style={styles.logoContainer}>
-            <Image
-              source={foxImage}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+            <Image source={foxImage} style={styles.logo} resizeMode="contain" />
           </View>
 
-          {/* Form Đăng ký */}
+          {/* Form */}
           <View style={styles.formContainer}>
-            {/* Input Họ và Tên */}
             <TextInput
               style={styles.input}
               placeholder="Họ và Tên"
               value={fullName}
               onChangeText={setFullName}
               autoCapitalize="words"
-              keyboardType="default"
               placeholderTextColor="#AFAFAF"
             />
 
-            {/* Input Email */}
             <TextInput
               style={styles.input}
               placeholder="Email"
@@ -99,7 +104,6 @@ const RegisterScreen: React.FC = () => {
               placeholderTextColor="#AFAFAF"
             />
 
-            {/* Input Mật khẩu */}
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
@@ -122,14 +126,13 @@ const RegisterScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            {/* ✨ INPUT XÁC NHẬN MẬT KHẨU MỚI */}
             <View style={styles.passwordInputContainer}>
               <TextInput
                 style={styles.passwordInput}
                 placeholder="Xác nhận Mật khẩu"
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
-                secureTextEntry={!showConfirmPassword} // Sử dụng state riêng
+                secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
                 placeholderTextColor="#AFAFAF"
               />
@@ -145,44 +148,23 @@ const RegisterScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            {/* Nút Đăng ký */}
             <TouchableOpacity
-              style={styles.registerButton}
+              style={[styles.registerButton, loading && { opacity: 0.6 }]}
               onPress={handleRegister}
+              disabled={loading}
               activeOpacity={0.8}
             >
-              <Text style={styles.registerButtonText}>ĐĂNG KÝ</Text>
+              <Text style={styles.registerButtonText}>
+                {loading ? "Đang xử lý..." : "ĐĂNG KÝ"}
+              </Text>
             </TouchableOpacity>
 
-            {/* Tùy chọn: đã có tài khoản? */}
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.loginLink}>Đã có tài khoản? <Text style={styles.loginLinkHighlight}>Đăng nhập ngay</Text></Text>
+              <Text style={styles.loginLink}>
+                Đã có tài khoản? <Text style={styles.loginLinkHighlight}>Đăng nhập ngay</Text>
+              </Text>
             </TouchableOpacity>
           </View>
-
-          <View style={styles.socialLoginContainer}>
-            <Text style={styles.orText}>Hoặc đăng ký bằng</Text>
-
-            {/* Nút Đăng ký bằng Facebook */}
-            <TouchableOpacity style={[styles.socialButton, styles.facebookButton]}>
-              <Ionicons name="logo-facebook" size={20} color="white" style={styles.socialIcon} />
-              <Text style={styles.socialButtonText}>FACEBOOK</Text>
-            </TouchableOpacity>
-
-            {/* Nút Đăng ký bằng Google */}
-            <TouchableOpacity style={[styles.socialButton, styles.googleButton]}>
-              <Ionicons name="logo-google" size={20} color="white" style={styles.socialIcon} />
-              <Text style={styles.socialButtonText}>GOOGLE</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Điều khoản và chính sách */}
-          <Text style={styles.termsText}>
-            Khi đăng ký trên Elisa, bạn đã đồng ý với Các chính sách và
-            <Text style={styles.termsHighlight}> Chính sách bảo mật </Text>
-            của chúng tôi.
-          </Text>
-
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -199,8 +181,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: Platform.OS === 'ios' ? 20 : 10,
   },
-
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -215,8 +195,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
   },
-
-  // Logo
   logoContainer: {
     alignItems: 'center',
     marginBottom: 10,
@@ -226,8 +204,6 @@ const styles = StyleSheet.create({
     width: 300,
     height: 200,
   },
-
-  // Form Input
   formContainer: {
     width: '100%',
     marginBottom: 20,
@@ -249,7 +225,7 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
     borderWidth: 1,
     borderRadius: 12,
-    marginBottom: 15, // Giảm margin để phù hợp với 2 trường mật khẩu
+    marginBottom: 15,
     paddingHorizontal: 15,
   },
   passwordInput: {
@@ -260,14 +236,12 @@ const styles = StyleSheet.create({
   passwordVisibilityToggle: {
     paddingLeft: 10,
   },
-
-  // Register Button (Màu giống nút Đăng nhập)
   registerButton: {
     backgroundColor: '#3B82F6',
     paddingVertical: 15,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 5, // Tăng nhẹ margin trên để tách khỏi input cuối
+    marginTop: 5,
     marginBottom: 15,
   },
   registerButtonText: {
@@ -275,8 +249,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-
-  // Already have account? Login link
   loginLink: {
     fontSize: 15,
     color: '#666',
@@ -285,53 +257,6 @@ const styles = StyleSheet.create({
   },
   loginLinkHighlight: {
     color: '#5C7AFF',
-    fontWeight: 'bold',
-  },
-
-  // Social Login
-  socialLoginContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  orText: {
-    textAlign: 'center',
-    color: '#AFAFAF',
-    fontSize: 15,
-    marginBottom: 20,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 15,
-    borderRadius: 12,
-    marginBottom: 10,
-  },
-  socialIcon: {
-    marginRight: 10,
-  },
-  socialButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  facebookButton: {
-    backgroundColor: '#4267B2',
-  },
-  googleButton: {
-    backgroundColor: '#DB4437',
-  },
-
-  // Terms and Conditions
-  termsText: {
-    fontSize: 13,
-    color: '#AFAFAF',
-    textAlign: 'center',
-    marginTop: 10,
-    lineHeight: 18,
-  },
-  termsHighlight: {
-    color: '#4B4B4B',
     fontWeight: 'bold',
   },
 });
