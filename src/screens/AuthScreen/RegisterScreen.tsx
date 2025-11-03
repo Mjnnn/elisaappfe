@@ -46,6 +46,7 @@ const RegisterScreen: React.FC = () => {
     try {
       setLoading(true);
       await authService.signUp(payload);
+      console.log("Register data:", payload);
 
       Alert.alert('Thành công', 'Đăng ký tài khoản thành công!');
       navigation.navigate('CourseSelection');// điều hướng về Login
