@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity, Image, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 // ✨ Import Data   
 import { quizQuestions } from '../../services/data/QuizData';
@@ -12,6 +13,9 @@ import foxImage from '../../../assets/images/logo/Elisa.png';
 // Định nghĩa kiểu Route
 type QuizResultsRouteProp = RouteProp<AuthStackParamList, 'QuizResults'>;
 
+// Định nghĩa kiểu Navigation   
+type QuizResultsScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'QuizResults'>;
+
 const COLOR_PRIMARY = '#3B82F6';
 const COLOR_SUCCESS = '#4CAF50';
 const COLOR_FAIL = '#F44336';
@@ -19,7 +23,7 @@ const COLOR_TEXT = '#4B4B4B';
 const QUIZ_SIZE = 10;
 
 const QuizResultsScreen: React.FC = () => {
-    const navigation = useNavigation();
+    const navigation = useNavigation<QuizResultsScreenNavigationProp>();
     const route = useRoute<QuizResultsRouteProp>();
     const { quizAnswers, learningLanguage } = route.params;
 
@@ -82,6 +86,10 @@ const QuizResultsScreen: React.FC = () => {
         // Điều hướng sang màn hình Tab chính của ứng dụng
         // navigation.replace('HomeTabs'); // Thay thế bằng tên màn hình chính của bạn
         Alert.alert("Hoàn thành!", `Bạn đã sẵn sàng bắt đầu học với lộ trình ${userLevelRecommendation}!`);
+        navigation.reset({
+            index: 0,
+            routes: [{ name: 'AppTabs' }],
+        });
     };
 
     return (

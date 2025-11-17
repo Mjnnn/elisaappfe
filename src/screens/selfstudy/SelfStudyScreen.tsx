@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  SafeAreaView,
   NativeSyntheticEvent,
   NativeScrollEvent,
   Dimensions,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from "@expo/vector-icons";
 import { ProgressBar } from "react-native-paper";
 import SelfStudyBottomBar from "../../components/SelfStudyBottomBar";
@@ -65,7 +65,7 @@ const SelfStudyScreen: React.FC = () => {
 
         {/* 📘✏️ Icon vở có bút */}
         <TouchableOpacity
-          onPress={() => navigation.navigate("Home")}
+          onPress={() => navigation.goBack()}
           style={styles.guideButton}
         >
           <View style={styles.iconWrapper}>
