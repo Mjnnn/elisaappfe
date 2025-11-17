@@ -114,6 +114,9 @@ const RegisterScreen: React.FC = () => {
                 secureTextEntry={!showPassword}
                 autoCapitalize="none"
                 placeholderTextColor="#AFAFAF"
+
+                textContentType="oneTimeCode"
+                autoComplete="off"
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
@@ -136,6 +139,9 @@ const RegisterScreen: React.FC = () => {
                 secureTextEntry={!showConfirmPassword}
                 autoCapitalize="none"
                 placeholderTextColor="#AFAFAF"
+
+                textContentType="oneTimeCode"
+                autoComplete="off"
               />
               <TouchableOpacity
                 onPress={() => setShowConfirmPassword(!showConfirmPassword)}

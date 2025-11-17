@@ -11,10 +11,11 @@ import GoalSelectionScreen from '../screens/WelcomeScreen/GoalSelectionScreen';
 import LevelSelectionScreen from '../screens/WelcomeScreen/LevelSelectionScreen';
 import DailyGoalScreen from '../screens/WelcomeScreen/DailyGoalScreen';
 import RegisterScreen from '../screens/AuthScreen/RegisterScreen';
-import HomeScreen from '../screens/WelcomeScreen/HomeScreen';
+import HomeScreen from '../screens/MainScreen/HomeScreen';
 import PlacementQuizScreen from '../screens/WelcomeScreen/PlacementQuizScreen';
 import QuizResultsScreen from '../screens/WelcomeScreen/QuizResultsScreen';
 import SelfStudyScreen from '../screens/selfstudy/SelfStudyScreen';
+import AppTabs from './AppTabs';
 
 // Định nghĩa kiểu dữ liệu cho các route (dùng TypeScript)
 export type AuthStackParamList = {
@@ -41,6 +42,9 @@ export type AuthStackParamList = {
     quizAnswers: { [questionId: number]: string }; // Đối tượng chứa câu trả lời của người dùng
     learningLanguage: string;
   };
+  AppTabs: undefined;
+  Home: undefined;
+  SelfStudyScreen: undefined;
 
   // Bạn có thể thêm các màn hình khác như Register, ForgotPassword, v.v.
 };
@@ -57,14 +61,13 @@ const AuthStack: React.FC = () => {
       <Stack.Screen name="Welcome" component={WelcomeScreen} />
       <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="AppTabs" component={AppTabs} />
       <Stack.Screen name="CourseSelection" component={CourseSelectionScreen} />
       <Stack.Screen name="GoalSelection" component={GoalSelectionScreen} />
       <Stack.Screen name="LevelSelection" component={LevelSelectionScreen} />
       <Stack.Screen name="DailyGoal" component={DailyGoalScreen} />
       <Stack.Screen name="PlacementQuiz" component={PlacementQuizScreen} />
       <Stack.Screen name="QuizResults" component={QuizResultsScreen} />
-
       <Stack.Screen name="SelfStudyScreen" component={SelfStudyScreen} />
     </Stack.Navigator>
   );

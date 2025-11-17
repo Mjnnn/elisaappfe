@@ -15,6 +15,7 @@ import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Toast from 'react-native-toast-message';
 
 import foxImage from '../../../assets/images/logo/Elisa.png';
 import { AuthStackParamList } from '../../navigation/AuthStack';
@@ -60,8 +61,24 @@ const LoginScreen: React.FC = () => {
       await AsyncStorage.setItem("userId", String(data.userId));
       await AsyncStorage.setItem("email", data.email);
 
-      alert("Đăng nhập thành công!");
-      navigation.replace("Home");
+      Toast.show({
+        type: 'success', // 👈 Loại thông báo có icon thành công
+
+        // Tiêu đề lớn
+        text1: '🎉 Đăng nhập thành công!',
+
+        // Thời gian hiển thị (mili giây)
+        visibilityTime: 1000,
+
+        // Vị trí
+        position: 'top',
+        topOffset: 80,
+      });
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'AppTabs' }],
+      });
 
     } catch (error: any) {
       console.log("Login error:", error.response?.data || error);
@@ -70,6 +87,10 @@ const LoginScreen: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const handleNavigateToRegister = () => {
+    navigation.navigate('Register');
+  }
 
   const handleSocialLogin = (platform: 'facebook' | 'google') => {
     console.log(`Đăng nhập bằng ${platform} được nhấn`);
@@ -80,7 +101,7 @@ const LoginScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
-        
+
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleGoBack} style={styles.closeButton}>
@@ -130,6 +151,12 @@ const LoginScreen: React.FC = () => {
             )}
           </TouchableOpacity>
 
+          <TouchableOpacity onPress={handleNavigateToRegister}>
+            <Text style={styles.registerLink}>
+              Bạn chưa có tài khoản? <Text style={styles.registerLinkHighlight}>Đăng ký ngay</Text>
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity onPress={() => console.log('Quên mật khẩu pressed')}>
             <Text style={styles.forgotPassword}>QUÊN MẬT KHẨU</Text>
           </TouchableOpacity>
@@ -163,6 +190,17 @@ const LoginScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#fff' },
+  registerLink: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 10, // Đẩy khu vực xã hội xuống
+  },
+  registerLinkHighlight: {
+    color: COLOR_PRIMARY,
+    fontWeight: 'bold',
+  },
   scrollContainer: { flexGrow: 1, paddingHorizontal: 20, paddingTop: Platform.OS === 'android' ? 10 : 0 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, marginBottom: 20 },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: COLOR_TEXT },
