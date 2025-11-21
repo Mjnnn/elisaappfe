@@ -6,9 +6,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 // ✨ IMPORT COMPONENT LEARNING PATH
-import LearningPath from '../../components/LearningPath';
+import LearningPath from '../../../components/LearningPath';
 
-import foxImage from '../../../assets/images/logo/Elisa.png';
+import foxImage from '../../../../assets/images/logo/Elisa.png';
 
 const COLOR_GREEN = '#6AC200';
 

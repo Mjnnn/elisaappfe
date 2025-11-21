@@ -4,7 +4,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 
 // Import các màn hình chính (Bạn cần tạo các file này sau)
-import HomeScreen from '../screens/MainScreen/HomeScreen'; // Khoá học
+import HomeScreen from '../screens/MainScreen/HomeScreen/HomeScreen'; // Khoá học
 import RankingScreen from '../screens/MainScreen/RankingScreen'; // Xếp Hạng
 import ChatAIScreen from '../screens/MainScreen/ChatAIScreen'; // Chat AI
 import NotificationScreen from '../screens/MainScreen/NotificationScreen'; // Thông Báo

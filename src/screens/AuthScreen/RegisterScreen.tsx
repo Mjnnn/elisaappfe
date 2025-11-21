@@ -18,6 +18,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import foxImage from '../../../assets/images/logo/Elisa.png';
 import authService from '../../services/authService';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import userProgressService from '../../services/userProgressService';
+import userXPService from '../../services/userXPService';
 
 const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -45,8 +48,15 @@ const RegisterScreen: React.FC = () => {
 
     try {
       setLoading(true);
-      await authService.signUp(payload);
+      const response = await authService.signUp(payload);
+      const data = response.data;
       console.log("Register data:", payload);
+      const newUserId = data.userId;
+      console.log("ID-USER: ", newUserId);
+      await AsyncStorage.setItem("userId", String(newUserId));
+      // Tạo user progress mới cho user vừa đăng ký
+      await userProgressService.createUserProgress(newUserId);
+      await userXPService.createUserXP(newUserId);
 
       Alert.alert('Thành công', 'Đăng ký tài khoản thành công!');
       navigation.navigate('CourseSelection');// điều hướng về Login
