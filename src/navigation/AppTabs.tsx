@@ -5,10 +5,11 @@ import { Platform } from 'react-native';
 
 // Import các màn hình chính (Bạn cần tạo các file này sau)
 import HomeScreen from '../screens/MainScreen/HomeScreen/HomeScreen'; // Khoá học
-import RankingScreen from '../screens/MainScreen/RankingScreen'; // Xếp Hạng
-import ChatAIScreen from '../screens/MainScreen/ChatAIScreen'; // Chat AI
-import NotificationScreen from '../screens/MainScreen/NotificationScreen'; // Thông Báo
-import SettingsScreen from '../screens/MainScreen/SettingsScreen'; // Cài Đặt
+import RankingScreen from '../screens/MainScreen/RankingScreen/RankingScreen'; // Xếp Hạng
+import ChatAIScreen from '../screens/MainScreen/ChatAIScreen/ChatAIScreen'; // Chat AI
+import NotificationScreen from '../screens/MainScreen/NotificationScreen/NotificationScreen'; // Thông Báo
+import SettingsScreen from '../screens/MainScreen/AccountScreen/SettingsScreen'; // Cài Đặt
+import AccountScreen from '../screens/MainScreen/AccountScreen/AccountScreen';
 
 // --- Định nghĩa Kiểu cho Tabs ---
 export type AppTabsParamList = {
@@ -16,7 +17,7 @@ export type AppTabsParamList = {
     ChatAI: undefined;
     Ranking: undefined;
     Notifications: undefined;
-    Settings: undefined;
+    Account: undefined;
 };
 
 const Tab = createBottomTabNavigator<AppTabsParamList>();
@@ -73,11 +74,11 @@ const AppTabs: React.FC = () => {
                             );
                             break;
 
-                        case 'Settings':
+                        case 'Account':
                             // Cài Đặt: Sử dụng 'cog' hoặc 'account-settings' (MaterialCommunityIcons)
                             iconComponent = (
                                 <MaterialCommunityIcons
-                                    name={focused ? 'cog' : 'cog-outline'}
+                                    name={focused ? 'account' : 'account-outline'}
                                     size={size}
                                     color={color}
                                 />
@@ -127,9 +128,9 @@ const AppTabs: React.FC = () => {
                 options={{ title: 'Thông báo' }}
             />
             <Tab.Screen
-                name="Settings"
-                component={SettingsScreen}
-                options={{ title: 'Cài đặt' }}
+                name="Account"
+                component={AccountScreen}
+                options={{ title: 'Tài khoản' }}
             />
         </Tab.Navigator>
     );
