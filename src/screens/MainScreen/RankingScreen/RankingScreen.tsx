@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
-    View, Text, StyleSheet, FlatList, Image, Dimensions,
+    View, Text, StyleSheet, FlatList, Image, Dimensions, Platform, StatusBar,
     ActivityIndicator, RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,19 +8,20 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as Animatable from 'react-native-animatable';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native'; // <--- IMPORT QUAN TRỌNG
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 
 // --- SERVICES & TYPES ---
 import userXPService from '../../../services/userXPService';
 import { UserXPResponse } from '../../../types/response/UserXPResponse';
 
 const { width } = Dimensions.get('window');
+const STATUSBAR_HEIGHT = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0;
 
-// Mở rộng Interface để dùng cho UI (thêm position và mapping name/avatar)
 interface RankingUIItem extends UserXPResponse {
     position: number;
-    displayName: string; // Tên hiển thị
-    displayAvatar: string; // Avatar hiển thị
-    // Các trường này có thể có hoặc không trong API gốc, ta sẽ xử lý fallback
+    displayName: string;
+    displayAvatar: string;
     fullName?: string;
     avatarUrl?: string;
 }
@@ -31,32 +32,31 @@ const RankingScreen = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
+    const tabBarHeight = useBottomTabBarHeight();
+
+    // State để ép Animation chạy lại mỗi lần focus
+    const [animationKey, setAnimationKey] = useState(0);
+
     // --- 1. HÀM GỌI API ---
     const fetchRankingData = useCallback(async () => {
         try {
-            // Lấy ID người dùng hiện tại để tìm trong bảng xếp hạng
             const currentUserIdStr = await AsyncStorage.getItem("userId");
             const currentUserId = currentUserIdStr ? Number(currentUserIdStr) : null;
 
-            // Gọi API
             const response = await userXPService.getRankingUserXP();
 
             if (response && response.data) {
                 const data = response.data;
 
-                // Map dữ liệu API sang dữ liệu UI
                 const formattedData: RankingUIItem[] = data.map((item: any, index: number) => ({
                     ...item,
                     position: index + 1,
-                    // Nếu API có trả về fullName thì dùng, không thì hiện "User + ID"
                     displayName: item.fullName || `Người dùng ${item.userId}`,
-                    // Nếu API có trả về avatarImage thì dùng, không thì dùng ảnh mặc định
                     displayAvatar: item.avatarImage || `https://i.pravatar.cc/150?u=${item.userId}`,
                 }));
 
                 setRankingList(formattedData);
 
-                // Tìm người dùng hiện tại trong list
                 if (currentUserId) {
                     const foundUser = formattedData.find(u => u.userId === currentUserId);
                     setCurrentUser(foundUser || null);
@@ -70,30 +70,32 @@ const RankingScreen = () => {
         }
     }, []);
 
-    // Gọi API khi vào màn hình
-    useEffect(() => {
-        fetchRankingData();
-    }, [fetchRankingData]);
+    // --- 2. SỬ DỤNG USE FOCUS EFFECT ---
+    // Chạy mỗi khi màn hình được focus (người dùng ấn vào tab)
+    useFocusEffect(
+        useCallback(() => {
+            setLoading(true); // Hiện loading để reset giao diện
+            setAnimationKey(prev => prev + 1); // Tăng key để ép animation chạy lại
+            fetchRankingData();
+        }, [fetchRankingData])
+    );
 
-    // Xử lý kéo xuống để load lại (Pull to Refresh)
     const onRefresh = () => {
         setRefreshing(true);
         fetchRankingData();
     };
 
-    // Tách Top 3 và phần còn lại
     const topThree = rankingList.slice(0, 3);
     const restUsers = rankingList.slice(3);
 
     // --- COMPONENT: PODIUM (TOP 3) ---
     const renderPodium = () => {
-        // Đảm bảo luôn có vị trí để render dù data ít hơn 3 người
         const first = topThree[0];
         const second = topThree[1];
         const third = topThree[2];
 
         const renderPlayer = (player: RankingUIItem | undefined, rank: number) => {
-            if (!player) return <View style={[styles.podiumItem, { opacity: 0 }]} />; // Placeholder rỗng
+            if (!player) return <View style={[styles.podiumItem, { opacity: 0 }]} />;
 
             const isFirst = rank === 1;
             const size = isFirst ? 110 : 80;
@@ -101,8 +103,11 @@ const RankingScreen = () => {
 
             return (
                 <Animatable.View
+                    // KEY QUAN TRỌNG: Thay đổi key sẽ buộc component unmount/mount lại -> chạy animation
+                    key={`podium-${animationKey}-${rank}`}
                     animation="fadeInUp"
-                    delay={rank * 200}
+                    duration={800}
+                    delay={rank * 200} // Delay để tạo hiệu ứng lên lần lượt
                     style={[styles.podiumItem, isFirst && { marginTop: -40 }]}
                 >
                     {isFirst && (
@@ -114,7 +119,6 @@ const RankingScreen = () => {
                             source={{ uri: player.displayAvatar }}
                             style={styles.avatarImage}
                         />
-                        {/* Icon Rank từ API */}
                         {player.icon_url && (
                             <Image source={{ uri: player.icon_url }} style={styles.rankBadgeSmall} resizeMode="contain" />
                         )}
@@ -140,31 +144,39 @@ const RankingScreen = () => {
         );
     };
 
-    // --- COMPONENT: LIST ITEM (TOP 4+) ---
-    const renderItem = ({ item }: { item: RankingUIItem }) => {
+    // --- COMPONENT: LIST ITEM ---
+    const renderItem = ({ item, index }: { item: RankingUIItem, index: number }) => {
         return (
-            <View style={styles.rankRow}>
-                <View style={styles.rankNumberContainer}>
-                    <Text style={styles.rankNumberText}>{item.position}</Text>
-                </View>
+            <Animatable.View
+                // Thêm animation nhẹ cho list luôn nếu thích
+                key={`list-${animationKey}-${item.userId}`}
+                animation="fadeInUp"
+                duration={600}
+                delay={400 + (index * 100)} // Delay sau khi Podium hiện xong
+            >
+                <View style={styles.rankRow}>
+                    <View style={styles.rankNumberContainer}>
+                        <Text style={styles.rankNumberText}>{item.position}</Text>
+                    </View>
 
-                <Image source={{ uri: item.displayAvatar }} style={styles.listAvatar} />
+                    <Image source={{ uri: item.displayAvatar }} style={styles.listAvatar} />
 
-                <View style={styles.userInfo}>
-                    <Text style={styles.userName} numberOfLines={1}>{item.displayName}</Text>
-                    <View style={styles.titleContainer}>
-                        {item.icon_url && (
-                            <Image source={{ uri: item.icon_url }} style={styles.miniRankIcon} resizeMode="contain" />
-                        )}
-                        <Text style={styles.userTitle}>{item.title}</Text>
+                    <View style={styles.userInfo}>
+                        <Text style={styles.userName} numberOfLines={1}>{item.displayName}</Text>
+                        <View style={styles.titleContainer}>
+                            {item.icon_url && (
+                                <Image source={{ uri: item.icon_url }} style={styles.miniRankIcon} resizeMode="contain" />
+                            )}
+                            <Text style={styles.userTitle}>{item.title}</Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.xpContainer}>
+                        <Text style={styles.xpText}>{item.totalXP.toLocaleString()}</Text>
+                        <Text style={styles.xpLabel}>XP</Text>
                     </View>
                 </View>
-
-                <View style={styles.xpContainer}>
-                    <Text style={styles.xpText}>{item.totalXP.toLocaleString()}</Text>
-                    <Text style={styles.xpLabel}>XP</Text>
-                </View>
-            </View>
+            </Animatable.View>
         );
     };
 
@@ -180,7 +192,7 @@ const RankingScreen = () => {
         <SafeAreaView style={styles.container}>
             {/* Header Gradient */}
             <LinearGradient
-                colors={['#4c669f', '#3b5998', '#192f6a']}
+                colors={['#3B82F6', '#2563EB']}
                 style={styles.headerGradient}
             >
                 <Text style={styles.headerTitle}>Bảng Xếp Hạng</Text>
@@ -188,10 +200,10 @@ const RankingScreen = () => {
             </LinearGradient>
 
             <View style={styles.bodyContainer}>
-                {/* Phần Podium (Top 3) */}
+                {/* Phần Podium */}
                 {rankingList.length > 0 && renderPodium()}
 
-                {/* Phần List (Top 4 trở đi) */}
+                {/* Phần List */}
                 <View style={styles.listContainer}>
                     <FlatList
                         data={restUsers}
@@ -211,34 +223,41 @@ const RankingScreen = () => {
                 </View>
             </View>
 
-            {/* Footer: User hiện tại (Sticky) */}
+            {/* Footer: User hiện tại */}
             {currentUser && (
-                <LinearGradient colors={['#FFFFFF', '#F0F8FF']} style={styles.myRankContainer}>
-                    <View style={[styles.rankNumberContainer, { backgroundColor: '#3B82F6' }]}>
-                        <Text style={[styles.rankNumberText, { color: 'white' }]}>{currentUser.position}</Text>
-                    </View>
-
-                    <Image source={{ uri: currentUser.displayAvatar }} style={styles.listAvatar} />
-
-                    <View style={styles.userInfo}>
-                        <Text style={[styles.userName, { color: '#3B82F6' }]} numberOfLines={1}>
-                            Bạn ({currentUser.displayName})
-                        </Text>
-                        <View style={styles.titleContainer}>
-                            {currentUser.icon_url && (
-                                <Image source={{ uri: currentUser.icon_url }} style={styles.miniRankIcon} resizeMode="contain" />
-                            )}
-                            <Text style={styles.userTitle}>{currentUser.title}</Text>
+                <Animatable.View
+                    animation="slideInUp"
+                    duration={800}
+                    key={`footer-${animationKey}`}
+                    style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }} // Animation cho footer luôn
+                >
+                    <LinearGradient colors={['#FFFFFF', '#F0F8FF']} style={styles.myRankContainer}>
+                        <View style={[styles.rankNumberContainer, { backgroundColor: '#3B82F6' }]}>
+                            <Text style={[styles.rankNumberText, { color: 'white' }]}>{currentUser.position}</Text>
                         </View>
-                    </View>
 
-                    <View style={styles.xpContainer}>
-                        <Text style={[styles.xpText, { color: '#3B82F6' }]}>
-                            {currentUser.totalXP.toLocaleString()}
-                        </Text>
-                        <Text style={styles.xpLabel}>XP</Text>
-                    </View>
-                </LinearGradient>
+                        <Image source={{ uri: currentUser.displayAvatar }} style={styles.listAvatar} />
+
+                        <View style={styles.userInfo}>
+                            <Text style={[styles.userName, { color: '#3B82F6' }]} numberOfLines={1}>
+                                Bạn ({currentUser.displayName})
+                            </Text>
+                            <View style={styles.titleContainer}>
+                                {currentUser.icon_url && (
+                                    <Image source={{ uri: currentUser.icon_url }} style={styles.miniRankIcon} resizeMode="contain" />
+                                )}
+                                <Text style={styles.userTitle}>{currentUser.title}</Text>
+                            </View>
+                        </View>
+
+                        <View style={styles.xpContainer}>
+                            <Text style={[styles.xpText, { color: '#3B82F6' }]}>
+                                {currentUser.totalXP.toLocaleString()}
+                            </Text>
+                            <Text style={styles.xpLabel}>XP</Text>
+                        </View>
+                    </LinearGradient>
+                </Animatable.View>
             )}
         </SafeAreaView>
     );
@@ -248,7 +267,11 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F5F7FA' },
 
     // Header
-    headerGradient: { paddingVertical: 20, paddingHorizontal: 20, alignItems: 'center', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, paddingBottom: 60 },
+    headerGradient: {
+        paddingTop: Platform.OS === 'android'
+            ? (StatusBar.currentHeight || 30) + 15
+            : 50, paddingVertical: 20, paddingHorizontal: 20, alignItems: 'center', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, paddingBottom: 60
+    },
     headerTitle: { fontSize: 24, fontWeight: 'bold', color: 'white' },
     headerSubtitle: { fontSize: 14, color: '#E0E0E0', marginTop: 5 },
 
@@ -282,7 +305,7 @@ const styles = StyleSheet.create({
     xpLabel: { fontSize: 10, color: '#999' },
 
     // Footer (My Rank)
-    myRankContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', alignItems: 'center', paddingVertical: 15, paddingHorizontal: 20, borderTopWidth: 1, borderTopColor: '#E0E0E0', elevation: 20, paddingBottom: 30 },
+    myRankContainer: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, paddingHorizontal: 20, borderTopWidth: 1, borderTopColor: '#E0E0E0', elevation: 20, paddingBottom: 10 },
 });
 
 export default RankingScreen;

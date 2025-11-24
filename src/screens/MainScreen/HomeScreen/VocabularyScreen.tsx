@@ -48,7 +48,7 @@ const Flashcard: React.FC<{ item: EnglishVocabularyTheoryResponse }> = ({ item }
 const flashcardStyles = StyleSheet.create({
     cardContainer: {
         width: CARD_WIDTH,
-        height: SCREEN_WIDTH * 1.5,
+        height: SCREEN_WIDTH * 1.4,
         marginHorizontal: CARD_MARGIN / 2,
         backgroundColor: '#FFFFFF',
         borderRadius: 18,
@@ -61,13 +61,13 @@ const flashcardStyles = StyleSheet.create({
         borderColor: '#EFEFEF',
     },
     cardContent: { padding: 20, alignItems: 'center' },
-    imageWrapper: { width: '100%', height: 400, marginBottom: 20, borderRadius: 12, overflow: 'hidden' },
+    imageWrapper: { width: '100%', height: '60%', marginBottom: 20, borderRadius: 12, overflow: 'hidden' },
     image: { width: '100%', height: '100%' },
     imagePlaceholder: { width: '100%', height: '100%', backgroundColor: '#F0F0F0', justifyContent: 'center', alignItems: 'center' },
     placeholderText: { color: '#A0A0A0' },
     wordText: { fontSize: 36, fontWeight: 'bold', color: '#1E3A8A', marginBottom: 5 },
     typeText: { fontSize: 16, color: '#6B7280', marginBottom: 12, fontStyle: 'italic' },
-    meaningText: { fontSize: 20, color: '#4B4B4B', marginBottom: 8 },
+    meaningText: { fontSize: 20, color: '#4B4B4B', marginBottom: 10 },
     exampleText: { fontSize: 16, color: '#6B7280', fontStyle: 'italic', textAlign: 'center', marginTop: 10 },
     flatListContent: { alignItems: 'center', paddingHorizontal: CARD_MARGIN / 2 },
 });

@@ -29,3 +29,8 @@ export const getAchievementID = (xp: number): number => {
     // Nếu không tìm thấy (do XP quá cao vượt mốc 99999): Trả về cấp cuối cùng (Huyền Thoại)
     return rankingData[rankingData.length - 1].achievementID;
 };
+
+export const getRankIconByID = (id: number): string => {
+    const rank = rankingData.find((r) => r.achievementID === id);
+    return rank ? rank.icon_url : rankingData[0].icon_url;
+};
