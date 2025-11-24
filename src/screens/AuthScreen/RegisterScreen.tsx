@@ -21,6 +21,7 @@ import authService from '../../services/authService';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import userProgressService from '../../services/userProgressService';
 import userXPService from '../../services/userXPService';
+import notificationService from '../../services/notificationService';
 
 const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<any>();
@@ -54,9 +55,35 @@ const RegisterScreen: React.FC = () => {
       const newUserId = data.userId;
       console.log("ID-USER: ", newUserId);
       await AsyncStorage.setItem("userId", String(newUserId));
+      await AsyncStorage.setItem("fullName", fullName);
+
+      // Tạo notification mẫu chào mừng người dùng mới
+      const notificationPayload = {
+        userId: newUserId,
+        title: "Chào mừng đến với Elisa!",
+        content: `Chào mừng ${fullName} đến với Elisa! Bắt đầu hành trình học tập của bạn ngay hôm nay.`,
+        imageUrl: "https://res.cloudinary.com/dj4hbfwj9/image/upload/v1763954676/Elisa_Notification.png",
+        type: "welcome",
+      };
+      await notificationService.createNotification(notificationPayload);
+
       // Tạo user progress mới cho user vừa đăng ký
       await userProgressService.createUserProgress(newUserId);
+
+      // Tạo thông báo user level mới cho user vừa đăng ký
+      const notificationPayloadLevel = {
+        userId: newUserId,
+        title: "Mở khoá lộ trình!",
+        content: `Chào mừng ${fullName} đã trở thành Tân Thủ mới của Elisa. Hãy bắt đầu lộ trình mới và thăng cấp mỗi ngày nhé`,
+        imageUrl: "https://res.cloudinary.com/dj4hbfwj9/image/upload/v1763707656/rank-TanThu.png",
+        type: "level",
+      };
+      await notificationService.createNotification(notificationPayloadLevel);
+
+      // Tạo user XP mới cho user vừa đăng ký
       await userXPService.createUserXP(newUserId);
+
+
 
       Alert.alert('Thành công', 'Đăng ký tài khoản thành công!');
       navigation.navigate('CourseSelection');// điều hướng về Login

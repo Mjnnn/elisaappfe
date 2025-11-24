@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // Import các màn hình chính (Bạn cần tạo các file này sau)
 import HomeScreen from '../screens/MainScreen/HomeScreen/HomeScreen'; // Khoá học
@@ -27,6 +28,8 @@ const COLOR_PRIMARY = '#3B82F6';
 const COLOR_INACTIVE = '#AFAFAF';
 
 const AppTabs: React.FC = () => {
+    const insets = useSafeAreaInsets();
+
     return (
         <Tab.Navigator
             initialRouteName="Home"
@@ -96,9 +99,20 @@ const AppTabs: React.FC = () => {
                 tabBarActiveTintColor: COLOR_PRIMARY,
                 tabBarInactiveTintColor: COLOR_INACTIVE,
                 tabBarStyle: {
-                    height: Platform.OS === 'ios' ? 90 : 60, // Tăng chiều cao trên iOS để tính cả Safe Area
-                    paddingBottom: Platform.OS === 'ios' ? 30 : 5, // Đệm dưới cho Android và iOS
+                    // Chiều cao tự động tính toán theo Safe Area
+                    height: 60 + (insets.bottom > 0 ? insets.bottom : 10),
+
+                    // Padding đáy tự động (nếu máy có thanh vuốt thì đệm nhiều, không thì đệm ít)
+                    paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+
                     paddingTop: 5,
+                    backgroundColor: 'white',
+                    borderTopWidth: 0,
+                    elevation: 10,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,

@@ -15,10 +15,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import userProgressService from '../../../services/userProgressService';
 import userXPService from '../../../services/userXPService';
 import exerciseService from '../../../services/exerciseService';
+import notificationService from '../../../services/notificationService';
 
 // --- Data & Utils ---
 import { getLessonTitleById } from '../../../services/data/LearningPathData';
-import { rankingData, getAchievementID } from '../../../services/data/RankingData';
+import { rankingData, getAchievementID, getRankIconByID } from '../../../services/data/RankingData';
 
 // --- Types ---
 import { CombinedQuestion, MultipleChoiceQuestion, SentenceRewritingQuestion } from '../../../types/response/ExerciseResponse';
@@ -260,6 +261,7 @@ const ExerciseScreen = () => {
                 return;
             }
             const userId = Number(userIdString);
+            const fullName = await AsyncStorage.getItem("fullName") || "Học viên Elisa";
 
             // BƯỚC 1: KIỂM TRA TIẾN ĐỘ HIỆN TẠI TRÊN SERVER
             const progressResponse = await userProgressService.getUserProgressByUserId(userId);
@@ -305,6 +307,15 @@ const ExerciseScreen = () => {
                     achievementsID: newAchievementID,
                     totalXP: currentXP + xpToAdd
                 });
+
+                const notificationPayloadLevel = {
+                    userId: userId,
+                    title: "Lên cấp!",
+                    content: `Chúc mừng ${fullName} bạn vừa thăng cấp. Hãy tiếp tục cố gắng để đạt được những thành tựu cao hơn nhé!`,
+                    imageUrl: `${getRankIconByID(newAchievementID)}`,
+                    type: "level",
+                };
+                await notificationService.createNotification(notificationPayloadLevel);
 
                 const rankInfo = rankingData.find(r => r.achievementID === newAchievementID);
                 if (rankInfo) {

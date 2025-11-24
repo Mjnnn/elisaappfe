@@ -15,8 +15,10 @@ import { learningPathData, PathNode, NodeStatus } from '../services/data/Learnin
 import userProgressService from '../services/userProgressService';
 import userXPService from '../services/userXPService';
 import { UserProgressResponse } from '../types/response/UserProgressResponse';
-import { rankingData, getAchievementID } from '../services/data/RankingData';
+import notificationService from '../services/notificationService';
+import { rankingData, getAchievementID, getRankIconByID } from '../services/data/RankingData';
 import LevelUpModal, { LevelData } from './LevelUpModal';
+
 
 // --- CẤU HÌNH UI ---
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -247,16 +249,27 @@ const LearningPath: React.FC = () => {
                 // Rương đang active nghĩa là chưa nhận -> Thực hiện nhận quà
                 try {
                     const userIdString = await AsyncStorage.getItem("userId");
+                    const userId = Number(userIdString);
+                    const fullName = await AsyncStorage.getItem("fullName") || "Học viên Elisa";
                     if (userIdString) {
                         // 1. Cộng XP
                         const xpToAdd = 300;
-                        const currentXPRes = await userXPService.getUserXPByUserId(Number(userIdString));
+                        const currentXPRes = await userXPService.getUserXPByUserId(userId);
                         const currentXP = currentXPRes.data.totalXP || 0;
                         const newAchievementID = getAchievementID(currentXP + xpToAdd);
 
                         if (newAchievementID !== currentXPRes.data.achievementsID) {
                             const rankInfo = rankingData.find(r => r.achievementID === newAchievementID);
                             if (rankInfo) {
+                                const notificationPayloadLevel = {
+                                    userId: userId,
+                                    title: "Lên cấp!",
+                                    content: `Chúc mừng ${fullName} bạn vừa thăng cấp. Hãy tiếp tục cố gắng để đạt được những thành tựu cao hơn nhé!`,
+                                    imageUrl: `${getRankIconByID(newAchievementID)}`,
+                                    type: "level",
+                                };
+                                await notificationService.createNotification(notificationPayloadLevel);
+
                                 setNewLevelData(rankInfo);
                             } else {
                                 setNewLevelData(null);
@@ -267,6 +280,7 @@ const LearningPath: React.FC = () => {
                             achievementsID: newAchievementID,
                             totalXP: currentXP + xpToAdd
                         });
+
 
                         setTreasureXP(300);
                         setShowTreasure(true);
