@@ -189,7 +189,7 @@ const RankingScreen = () => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
             {/* Header Gradient */}
             <LinearGradient
                 colors={['#3B82F6', '#2563EB']}
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     headerGradient: {
         paddingTop: Platform.OS === 'android'
             ? (StatusBar.currentHeight || 30) + 15
-            : 50, paddingVertical: 20, paddingHorizontal: 20, alignItems: 'center', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, paddingBottom: 60
+            : 80, paddingVertical: 20, paddingHorizontal: 20, alignItems: 'center', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, paddingBottom: 60
     },
     headerTitle: { fontSize: 24, fontWeight: 'bold', color: 'white' },
     headerSubtitle: { fontSize: 14, color: '#E0E0E0', marginTop: 5 },

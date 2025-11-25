@@ -1,35 +1,28 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
-// ✨ IMPORT COMPONENT LEARNING PATH
-import LearningPath from '../../../components/LearningPath';
-
+import LearningPath, { LearningPathHandle } from '../../../components/LearningPath';
 import foxImage from '../../../../assets/images/logo/Elisa.png';
 
-const COLOR_GREEN = '#6AC200';
-
-// Component Section Header
-const SectionHeader: React.FC<{ title: string; subtitle: string; color: string }> = ({ title, subtitle, color }) => {
-  return (
-    <View style={[homeStyles.sectionHeader, { backgroundColor: color }]}>
-      <Text style={homeStyles.sectionSubtitle}>{subtitle}</Text>
-      <Text style={homeStyles.sectionTitleText}>{title}</Text>
-      <TouchableOpacity style={homeStyles.menuIcon}>
-        <Ionicons name="list" size={24} color="white" />
-      </TouchableOpacity>
-    </View>
-  );
-};
-
 const HomeScreen: React.FC = () => {
-  const [name, setName] = React.useState<string>('');
+  const [name, setName] = useState<string>('');
+
+  // 1. CHỈ DÙNG STATE ĐỂ HIỂN THỊ NÚT X (True/False)
+  // Không lưu toàn bộ text vào state để tránh re-render liên tục
+  const [showClearButton, setShowClearButton] = useState(false);
+
+  // 2. DÙNG REF ĐỂ LƯU TEXT TÌM KIẾM (Thay vì state)
+  const searchTextRef = useRef('');
+
+  const searchInputRef = useRef<TextInput>(null);
+  const learningPathRef = useRef<LearningPathHandle>(null);
   const navigation = useNavigation<any>();
 
-  React.useEffect(() => {
+  useEffect(() => {
     const loadUser = async () => {
       const storedName = await AsyncStorage.getItem('fullName');
       if (storedName) setName(storedName);
@@ -37,12 +30,38 @@ const HomeScreen: React.FC = () => {
     loadUser();
   }, []);
 
+  // Hàm xử lý khi gõ chữ
+  const handleChangeText = (text: string) => {
+    // Cập nhật giá trị vào biến Ref (Không gây re-render)
+    searchTextRef.current = text;
+
+    // Chỉ re-render để hiện nút X khi cần thiết
+    if (text.length > 0 && !showClearButton) {
+      setShowClearButton(true);
+    } else if (text.length === 0 && showClearButton) {
+      setShowClearButton(false);
+    }
+  };
+
+  const handleSearch = () => {
+    if (learningPathRef.current) {
+      // 3. LẤY GIÁ TRỊ TỪ REF ĐỂ TÌM KIẾM
+      learningPathRef.current.scrollToLesson(searchTextRef.current);
+    }
+  };
+
+  const handleClearSearch = () => {
+    searchTextRef.current = '';   // Reset biến ref
+    setShowClearButton(false);    // Ẩn nút X
+    searchInputRef.current?.clear(); // Xóa chữ trên giao diện
+    // Keyboard.dismiss(); // Có thể bỏ dòng này nếu muốn gõ tiếp luôn sau khi xóa
+  };
+
   return (
     <SafeAreaView style={homeStyles.container} edges={['top', 'left', 'right']}>
-      {/* 1. KHÔNG SỬ DỤNG SCROLLVIEW Ở ĐÂY NỮA, DÙNG VIEW THAY THẾ */}
       <View style={{ flex: 1 }}>
 
-        {/* HEADER CỐ ĐỊNH */}
+        {/* HEADER ... giữ nguyên ... */}
         <View style={homeStyles.header}>
           <Image source={foxImage} style={homeStyles.avatar} resizeMode="contain" />
           <View style={homeStyles.centerBox}>
@@ -54,77 +73,61 @@ const HomeScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* SEARCH */}
+        {/* SEARCH BAR */}
         <View style={homeStyles.searchContainer}>
-          <Ionicons name="search" size={22} color="#6B7280" />
+          <TouchableOpacity onPress={handleSearch}>
+            <Ionicons name="search" size={22} color="#6B7280" />
+          </TouchableOpacity>
+
           <TextInput
+            ref={searchInputRef}
             style={homeStyles.searchInput}
-            placeholder="Tìm bài học, chủ đề, kỹ năng..."
+            placeholder="Tìm bài học..."
             placeholderTextColor="#9CA3AF"
+
+            // 4. KHÔNG TRUYỀN VALUE, CHỈ DÙNG DEFAULT VALUE
+            defaultValue=""
+
+            // 5. GỌI HÀM XỬ LÝ MỚI (KHÔNG SET STATE LIÊN TỤC)
+            onChangeText={handleChangeText}
+
+            returnKeyType="search"
+            onSubmitEditing={handleSearch}
+
+            // Tắt gợi ý để đỡ bị nhảy chữ trên iOS
+            autoCorrect={false}
+            spellCheck={false}
           />
+
+          {/* 6. HIỂN THỊ NÚT X DỰA TRÊN BIẾN LOGIC */}
+          {showClearButton && (
+            <TouchableOpacity onPress={handleClearSearch}>
+              <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+          )}
         </View>
 
-        {/* 2. RENDER LEARNING PATH (NÓ ĐÃ LÀ SCROLLVIEW) */}
-        <LearningPath />
+        <LearningPath ref={learningPathRef} />
       </View>
     </SafeAreaView>
   );
 };
 
-
-// Đổi tên styles thành homeStyles để tránh xung đột với LearningPath
 const homeStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 20,
-    alignItems: 'center',
+    flexDirection: 'row', justifyContent: 'space-between', padding: 20, alignItems: 'center',
   },
   centerBox: { alignItems: 'center', flex: 1 },
   welcomeText: { fontSize: 16, color: '#6B7280' },
   username: { fontSize: 26, fontWeight: 'bold', color: '#111827' },
   avatar: { width: 50, height: 50 },
   searchContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
-    marginHorizontal: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 20, // ✨ LOẠI BỎ MARGIN BOTTOM Ở ĐÂY
+    flexDirection: 'row', backgroundColor: '#F3F4F6', marginHorizontal: 20,
+    paddingHorizontal: 12, paddingVertical: 12, borderRadius: 12,
+    alignItems: 'center', marginBottom: 20,
   },
   searchInput: { marginLeft: 10, fontSize: 16, flex: 1, color: '#111' },
-
-  // --- Section Header Styles (Đã chuyển từ LearningPath) ---
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    height: 80,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: 'white',
-    fontWeight: 'normal',
-    position: 'absolute',
-    top: 8,
-    left: 20,
-  },
-  sectionTitleText: {
-    fontSize: 20,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  menuIcon: {
-    position: 'absolute',
-    right: 20,
-    padding: 5,
-  },
-  // ... (Các styles khác không liên quan đã được xóa/giữ nguyên)
 });
 
 export default HomeScreen;
