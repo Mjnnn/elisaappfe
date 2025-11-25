@@ -8,7 +8,6 @@ const BASE_URL = "/english-user-xp";
 
 const userXPService = {
 
-  // Lấy danh sách từ vựng có phân trang
   getUserXPByUserId: (userId: number): Promise<AxiosResponse<UserXPResponse>> =>
     apiService.get(`${BASE_URL}/${userId}`),
 

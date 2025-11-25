@@ -22,6 +22,8 @@ import VocabularyPracticeScreen from '../screens/MainScreen/HomeScreen/Vocabular
 import GrammarScreen from '../screens/MainScreen/HomeScreen/GrammarScreen';
 import ExerciseLoadingScreen from '../screens/MainScreen/loading/ExerciseLoadingScreen';
 import ExerciseScreen from '../screens/MainScreen/HomeScreen/ExerciseScreen';
+import EditProfileScreen from '../screens/MainScreen/AccountScreen/EditProfileScreen';
+import ChangePasswordScreen from '../screens/MainScreen/AccountScreen/ChangePasswordScreen';
 
 // Định nghĩa kiểu dữ liệu cho các route (dùng TypeScript)
 export type AuthStackParamList = {
@@ -57,7 +59,8 @@ export type AuthStackParamList = {
   GrammarScreen: { lessonId: number; lessonTitle: string, section: number };
   ExerciseLoading: { lessonId: number; lessonTitle: string; section: number; targetRoute: keyof AuthStackParamList };
   ExerciseScreen: { lessonId: number; lessonTitle: string, section: number };
-  // Bạn có thể thêm các màn hình khác như Register, ForgotPassword, v.v.
+  EditProfileScreen: { userInitialData: any };
+  ChangePasswordScreen: { email: string };
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -86,6 +89,8 @@ const AuthStack: React.FC = () => {
       <Stack.Screen name="GrammarScreen" component={GrammarScreen} />
       <Stack.Screen name="ExerciseLoading" component={ExerciseLoadingScreen} />
       <Stack.Screen name="ExerciseScreen" component={ExerciseScreen} />
+      <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
+      <Stack.Screen name="ChangePasswordScreen" component={ChangePasswordScreen} />
     </Stack.Navigator>
   );
 };

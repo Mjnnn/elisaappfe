@@ -25,6 +25,18 @@ const userService = {
   // Cập nhật user theo id
   updateUser: (id: number, data: any) => apiService.put(`${BASE_URL}/${id}`, data),
 
+  // Cập nhật profile user
+  updateProfile: (data: any) => apiService.put(`${BASE_URL}/update-profile`, data),
+
+  // Cập nhật avatar user
+  updateAvatar: (userId: number, formData: FormData) => 
+    apiService.post(`${BASE_URL}/update-avatar/${userId}`, formData, {
+        headers: { 
+            'Content-Type': 'multipart/form-data' // <--- QUAN TRỌNG NHẤT
+        },
+        transformRequest: (data) => data, // Giữ nguyên format FormData
+    }),
+
   // Xóa user
   deleteUser: (id: number) => apiService.delete(`${BASE_URL}/${id}`),
 
@@ -45,7 +57,7 @@ const userService = {
   getByEmail: (email: string) => apiService.get(`${BASE_URL}/email/${email}`),
 
   // Đổi mật khẩu
-  changePassword: (data: { email: string; oldPassword: string; newPassword: string }) =>
+  changePassword: (data: { email: string; currentPassword: string; newPassword: string }) =>
     apiService.post(`${BASE_URL}/change-password`, data),
 
   // Test endpoint cho admin

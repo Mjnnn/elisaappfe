@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
     View, Text, StyleSheet, FlatList, Image, TouchableOpacity,
-    Dimensions, RefreshControl, StatusBar, Alert
+    Dimensions, RefreshControl, StatusBar, Alert, Platform // <--- 1. Thêm Platform
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// Bỏ SafeAreaView ở đây hoặc không dùng nó làm thẻ bao ngoài
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Animatable from 'react-native-animatable';
@@ -12,7 +12,6 @@ import { vi } from 'date-fns/locale';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- IMPORT SERVICE ---
-// Lưu ý: Tôi import alias là notificationService cho đúng ngữ cảnh
 import notificationService from '../../../services/notificationService';
 import { NotificationResponse } from '../../../types/response/NotificationResponse';
 
@@ -20,12 +19,9 @@ const { width } = Dimensions.get('window');
 
 // --- COMPONENT CON: Notification Item ---
 const NotificationCard = ({ item, index, onPress }: { item: NotificationResponse, index: number, onPress: (id: number) => void }) => {
-    // Xử lý logic hiển thị (Database trả về bit(1) nên có thể là 0/1 hoặc true/false)
-    // Ép kiểu về Number để so sánh cho chắc chắn: 0 là chưa đọc
     const isUnread = Number(item.isRead) === 0;
     const isLevelUp = item.type === 'level';
 
-    // Phân loại màu sắc icon
     let iconBgColor = '#F3F4F6';
     let iconName: any = 'notifications';
     let iconColor = '#6B7280';
@@ -38,7 +34,6 @@ const NotificationCard = ({ item, index, onPress }: { item: NotificationResponse
         iconBgColor = '#FEE2E2'; iconColor = '#EF4444'; iconName = 'bell-ring';
     }
 
-    // Xử lý thời gian
     let timeAgo = '';
     try {
         timeAgo = formatDistanceToNow(new Date(item.sendTime), { addSuffix: true, locale: vi });
@@ -48,7 +43,6 @@ const NotificationCard = ({ item, index, onPress }: { item: NotificationResponse
 
     const CardContent = () => (
         <View style={[styles.cardContainer, isUnread && styles.unreadContainer]}>
-            {/* Icon / Image */}
             <View style={[styles.iconContainer, { backgroundColor: iconBgColor }]}>
                 {item.imageUrl ? (
                     <Image source={{ uri: item.imageUrl }} style={styles.iconImage} resizeMode="contain" />
@@ -57,7 +51,6 @@ const NotificationCard = ({ item, index, onPress }: { item: NotificationResponse
                 )}
             </View>
 
-            {/* Text Content */}
             <View style={styles.textContainer}>
                 <View style={styles.headerRow}>
                     <Text style={[styles.title, isUnread && styles.unreadText]} numberOfLines={1}>
@@ -79,12 +72,11 @@ const NotificationCard = ({ item, index, onPress }: { item: NotificationResponse
         <Animatable.View
             animation="fadeInUp"
             duration={500}
-            delay={index * 100} // Hiệu ứng thác nước
+            delay={index * 100}
             useNativeDriver
         >
             <TouchableOpacity
                 activeOpacity={0.7}
-                // Lưu ý: Database dùng 'notificationid' (chữ thường)
                 onPress={() => onPress(item.notificationId)}
                 style={{ marginHorizontal: 15, marginVertical: 6 }}
             >
@@ -110,17 +102,14 @@ const NotificationScreen = () => {
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    // --- 1. HÀM GỌI API LẤY DỮ LIỆU ---
     const fetchNotifications = useCallback(async () => {
         try {
             const userIdString = await AsyncStorage.getItem("userId");
             if (!userIdString) return;
 
-            // Gọi API
             const response = await notificationService.getNotificationByUserId(Number(userIdString));
 
             if (response && response.data) {
-                // Sắp xếp: Mới nhất lên đầu (Dựa vào sendTime)
                 const sortedData = response.data.sort((a, b) =>
                     new Date(b.sendTime).getTime() - new Date(a.sendTime).getTime()
                 );
@@ -134,7 +123,6 @@ const NotificationScreen = () => {
         }
     }, []);
 
-    // Gọi lần đầu khi vào màn hình
     useEffect(() => {
         fetchNotifications();
     }, []);
@@ -144,20 +132,16 @@ const NotificationScreen = () => {
         fetchNotifications();
     };
 
-    // --- 2. HÀM ĐÁNH DẤU TẤT CẢ LÀ ĐÃ ĐỌC ---
     const handleMarkAllRead = async () => {
         try {
             const userIdString = await AsyncStorage.getItem("userId");
             if (!userIdString) return;
 
-            // 1. Gọi API update
             await notificationService.updateNotification(Number(userIdString));
 
-            // 2. Cập nhật UI (Sửa is_read thành isRead)
-            // Vì backend trả về Boolean, ta nên set là true hoặc 1 đều được (do logic Number(item.isRead))
             setNotifications(prev => prev.map(item => ({
                 ...item,
-                isRead: true // Hoặc để là 1 nếu bạn muốn đồng bộ kiểu số
+                isRead: true
             })));
 
         } catch (error) {
@@ -166,15 +150,8 @@ const NotificationScreen = () => {
         }
     };
 
-    // --- 3. HÀM XỬ LÝ KHI BẤM VÀO 1 THÔNG BÁO ---
     const handlePressItem = (id: number) => {
-        // Hiện tại API của bạn chỉ có update theo UserID (Read All).
-        // Nếu chưa có API update từng cái, ta chỉ update UI Local để người dùng thấy nó đã đọc.
-        // setNotifications(prev => prev.map(item =>
-        //     item.notificationId === id ? { ...item, isRead: 1 } : item
-        // ));
-
-        // TODO: Nếu sau này có API update từng cái (VD: updateOne(notiId)), hãy gọi ở đây.
+        // Logic xử lý khi ấn vào item (nếu có)
     };
 
     const renderEmpty = () => (
@@ -191,8 +168,11 @@ const NotificationScreen = () => {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
+        // 2. Thay SafeAreaView bằng View thường để tràn lên Status Bar
+        <View style={styles.container}>
+
+            {/* 3. Cấu hình StatusBar trong suốt */}
+            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
 
             {/* Header Gradient */}
             <LinearGradient
@@ -230,7 +210,7 @@ const NotificationScreen = () => {
                     ListEmptyComponent={renderEmpty}
                 />
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -239,7 +219,8 @@ const styles = StyleSheet.create({
 
     // Header Styles
     header: {
-        paddingTop: 50, // Cho tai thỏ
+        // 4. Padding Top động: Android cộng thêm StatusBar, iOS để 60px để tránh tai thỏ
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 30) + 20 : 100,
         paddingBottom: 25,
         paddingHorizontal: 20,
         borderBottomLeftRadius: 30,
