@@ -24,6 +24,20 @@ import ExerciseLoadingScreen from '../screens/MainScreen/loading/ExerciseLoading
 import ExerciseScreen from '../screens/MainScreen/HomeScreen/ExerciseScreen';
 import EditProfileScreen from '../screens/MainScreen/AccountScreen/EditProfileScreen';
 import ChangePasswordScreen from '../screens/MainScreen/AccountScreen/ChangePasswordScreen';
+import LessonScreen from '../screens/TeacherScreen/Lesson/LesssonScreen';
+import ListeningPracticeScreen from '../screens/MainScreen/EarTraining/ListeningPracticeScreen';
+import LearnByLevelScreen from '../screens/MainScreen/EarTraining/LearnByLevelScreen';
+import VideoLearningScreen from '../screens/MainScreen/EarTraining/VideoLearningScreen';
+
+// Router Teacher
+import AppTabLesson from './AppTabLesson';
+import VocabularyOfLessonScreen from '../screens/TeacherScreen/Lesson/VocabularyOfLessonScreen';
+import GrammarOfLessonScreen from '../screens/TeacherScreen/Lesson/GrammarOfLessonScreen';
+import ExerciseOfLessonScreen from '../screens/TeacherScreen/Lesson/ExerciseOfLessonScreen';
+import LoadingForLesson from '../screens/TeacherScreen/loading/LoadingForLesson';
+import AppTabTeacher from './AppTabTeacher';
+import EarTrainingScreen from '../screens/TeacherScreen/EarTraining/EarTrainingScreen';
+import CommonLevelScreen from '../screens/TeacherScreen/EarTraining/CommonLevelScreen';
 
 // Định nghĩa kiểu dữ liệu cho các route (dùng TypeScript)
 export type AuthStackParamList = {
@@ -52,6 +66,7 @@ export type AuthStackParamList = {
   };
   AppTabs: undefined;
   Home: undefined;
+
   SelfStudyScreen: undefined;
   LessonLoading: { lessonId: number; lessonTitle: string; section: number; targetRoute: keyof AuthStackParamList };
   VocabularyScreen: { lessonId: number; lessonTitle: string, section: number };
@@ -61,6 +76,17 @@ export type AuthStackParamList = {
   ExerciseScreen: { lessonId: number; lessonTitle: string, section: number };
   EditProfileScreen: { userInitialData: any };
   ChangePasswordScreen: { email: string };
+  LessonScreen: undefined;
+  AppTabLesson: undefined;
+  VocabularyOfLessonScreen: { lessonId: number; lessonTitle: string };
+  GrammarOfLessonScreen: { lessonId: number; lessonTitle: string };
+  ExerciseOfLessonScreen: { lessonId: number; lessonTitle: string };
+  LoadingForLesson: { lessonId: number; lessonTitle: string; section: number; targetRoute: keyof AuthStackParamList };
+  AppTabTeacher: undefined;
+  EarTrainingScreen: undefined;
+  CommonLevelScreen: { levelId: string };
+  LearnByLevelScreen: { levelId: string };
+  VideoLearningScreen: { videoId: number };
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -91,6 +117,17 @@ const AuthStack: React.FC = () => {
       <Stack.Screen name="ExerciseScreen" component={ExerciseScreen} />
       <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
       <Stack.Screen name="ChangePasswordScreen" component={ChangePasswordScreen} />
+      <Stack.Screen name="LessonScreen" component={LessonScreen} />
+      <Stack.Screen name="AppTabLesson" component={AppTabLesson} />
+      <Stack.Screen name="VocabularyOfLessonScreen" component={VocabularyOfLessonScreen} />
+      <Stack.Screen name="GrammarOfLessonScreen" component={GrammarOfLessonScreen} />
+      <Stack.Screen name="ExerciseOfLessonScreen" component={ExerciseOfLessonScreen} />
+      <Stack.Screen name="LoadingForLesson" component={LoadingForLesson} />
+      <Stack.Screen name="AppTabTeacher" component={AppTabTeacher} />
+      <Stack.Screen name="EarTrainingScreen" component={EarTrainingScreen} />
+      <Stack.Screen name="CommonLevelScreen" component={CommonLevelScreen} />
+      <Stack.Screen name="LearnByLevelScreen" component={LearnByLevelScreen} />
+      <Stack.Screen name="VideoLearningScreen" component={VideoLearningScreen} />
     </Stack.Navigator>
   );
 };

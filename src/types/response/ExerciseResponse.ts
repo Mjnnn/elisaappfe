@@ -16,7 +16,7 @@ export interface SentenceRewritingQuestion {
     originalSentence: string; // "a, I, am, teacher"
     rewrittenSentence: string; // "I am a teacher"
     hint: string;
-    linkMedia: string;
+    linkMedia: string;      
 }
 
 export interface PracticeResponse {

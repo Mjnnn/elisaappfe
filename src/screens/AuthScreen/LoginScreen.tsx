@@ -76,10 +76,17 @@ const LoginScreen: React.FC = () => {
         topOffset: 80,
       });
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'AppTabs' }],
-      });
+      if (data.role === 'USER') {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'AppTabs' }],
+        });
+      } else if (data.role === 'TEACHER') {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'AppTabTeacher' }],
+        });
+      }
 
     } catch (error: any) {
       console.log("Login error:", error.response?.data || error);
