@@ -11,10 +11,12 @@ import ChatAIScreen from '../screens/MainScreen/ChatAIScreen/ChatAIScreen'; // C
 import NotificationScreen from '../screens/MainScreen/NotificationScreen/NotificationScreen'; // Thông Báo
 import SettingsScreen from '../screens/MainScreen/AccountScreen/SettingsScreen'; // Cài Đặt
 import AccountScreen from '../screens/MainScreen/AccountScreen/AccountScreen';
+import ListeningPracticeScreen from '../screens/MainScreen/EarTraining/ListeningPracticeScreen';
 
 // --- Định nghĩa Kiểu cho Tabs ---
 export type AppTabsParamList = {
     Home: undefined; // Khoá học (Thường Home là nơi bắt đầu)
+    ListeningPractice: undefined;
     ChatAI: undefined;
     Ranking: undefined;
     Notifications: undefined;
@@ -42,6 +44,17 @@ const AppTabs: React.FC = () => {
                         case 'Home':
                             // Khoá học: Sử dụng icon mềm mại hơn (Ionicons)
                             iconComponent = <Ionicons name={focused ? 'school' : 'school-outline'} size={size} color={color} />;
+                            break;
+
+                        case 'ListeningPractice':
+                            iconComponent = (
+                                <MaterialCommunityIcons
+                                    // focused: tai nghe thường, !focused: tai nghe trong hộp (hoặc dùng 'headphones' cho cả 2)
+                                    name={focused ? 'headphones' : 'headphones-box'}
+                                    size={size}
+                                    color={color}
+                                />
+                            );
                             break;
 
                         case 'ChatAI':
@@ -115,7 +128,7 @@ const AppTabs: React.FC = () => {
                     shadowRadius: 4,
                 },
                 tabBarLabelStyle: {
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: '600',
                 },
                 headerShown: false, // Ẩn header mặc định của Tab
@@ -126,6 +139,13 @@ const AppTabs: React.FC = () => {
                 component={HomeScreen}
                 options={{ title: 'Khoá học' }}
             />
+
+            <Tab.Screen
+                name="ListeningPractice"
+                component={ListeningPracticeScreen}
+                options={{ title: 'Ngữ Âm' }}
+            />
+
             <Tab.Screen
                 name="ChatAI"
                 component={ChatAIScreen}

@@ -112,9 +112,11 @@ const PathNodeIcon: React.FC<PathNodeIconProps> = (props) => {
     }
 
     let finalContent = iconContent;
-    if (level && level > 3 && status !== 'locked') {
+    if (level && level > 2 && status !== 'locked') {
         nodeStyle.backgroundColor = '#9932CC';
-        finalContent = <Text style={{ fontSize: 28, fontWeight: 'bold', color: 'white' }}>{String(level)}</Text>
+        finalContent = finalContent = (
+            <Ionicons name="flame" size={NODE_SIZE * 0.4} color="white" />
+        );
     }
 
     return (

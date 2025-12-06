@@ -205,7 +205,9 @@ const AccountScreen = () => {
     };
     const handleEditAvatar = () => {
         Alert.alert("Cập nhật ảnh đại diện", "Chọn nguồn ảnh",
-            [{ text: "Hủy", style: "cancel" }, { text: "Chụp ảnh mới", onPress: takePhoto }, { text: "Chọn từ thư viện", onPress: pickImage }],
+            [{ text: "Hủy", style: "cancel" },
+            { text: "📷 Chụp ảnh mới", onPress: takePhoto },
+            { text: "🖼️ Thư viện ảnh", onPress: pickImage }],
             { cancelable: true }
         );
     };
