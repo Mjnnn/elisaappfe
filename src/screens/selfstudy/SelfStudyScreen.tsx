@@ -1,4 +1,6 @@
-import React, { useState, useRef } from "react";
+// src/screens/selfstudy/SelfStudyScreen.tsx
+
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,32 +12,118 @@ import {
   NativeScrollEvent,
   Dimensions,
 } from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ProgressBar } from "react-native-paper";
 import SelfStudyBottomBar from "../../components/SelfStudyBottomBar";
 import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+import documentListService from "../../services/documentListService";
+import documentItemService from "../../services/documentItemService";
+import { AuthStackParamList } from "../../navigation/AuthStack";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_MARGIN_RIGHT = 14;
 const CARD_WIDTH = Math.round(SCREEN_WIDTH * 0.8);
 
+// Kiểu cho 1 document list
+interface DocumentListItem {
+  listId: number;
+  userId: number;
+  fullName: string;
+  avatarImage?: string | null;
+  title: string;
+  description?: string;
+  type: string;
+  createdAt: string;
+  isPublic: number;
+  itemCount?: number; // số item (cards) trong list
+}
+
+// Kiểu navigation cho màn hình này
+type NavProp = NativeStackNavigationProp<AuthStackParamList, "SelfStudyScreen">;
+
+type SelfStudyNavProp = NativeStackNavigationProp<
+  AuthStackParamList,
+  "SelfStudyScreen"
+>;
+
 const SelfStudyScreen: React.FC = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<SelfStudyNavProp>();
+
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string>("Home");
   const scrollRef = useRef<ScrollView | null>(null);
 
+  // Danh sách list public (Recent)
+  const [recentPublicLists, setRecentPublicLists] = useState<DocumentListItem[]>([]);
+  const [loadingRecent, setLoadingRecent] = useState<boolean>(false);
+  const [searchKeyword, setSearchKeyword] = useState<string>("");
+
+  // Dummy cho phần "Continue from where you left off"
   const lessons = [
     { title: "Pass in One Go - Round 3", progress: 0.78, done: "22/28" },
     { title: "Daily Vocabulary - 24/10", progress: 0.55, done: "15/27" },
     { title: "Listening Practice - 2", progress: 0.32, done: "9/28" },
   ];
 
-  const recentLessons = [
-    { title: "Pass in One Go - Round 3", cards: 28, author: "QuynhOnThiTopik" },
-    { title: "Listening Vocabulary 24/10", cards: 34, author: "PhanVanLe" },
-  ];
+  // Hàm load danh sách public hoặc search + đếm số item
+  const loadLists = async (keyword?: string) => {
+    try {
+      setLoadingRecent(true);
+      let res;
+
+      const trimmed = (keyword ?? "").trim();
+
+      if (!trimmed) {
+        // Không nhập keyword → lấy tất cả public (paged)
+        res = await documentListService.getPublicLists(0, 10);
+      } else {
+        // Có keyword → search theo title/type
+        res = await documentListService.searchPublicByTitleOrType(
+          trimmed,
+          0,
+          10
+        );
+      }
+
+      const pageData = res.data; // Page<DocumentListResponse>
+      const lists: DocumentListItem[] = pageData.content ?? [];
+
+      // Lấy số item cho từng list
+      const listsWithCounts = await Promise.all(
+        lists.map(async (list) => {
+          try {
+            const itemsRes = await documentItemService.getByListId(list.listId);
+            const count = Array.isArray(itemsRes.data)
+              ? itemsRes.data.length
+              : 0;
+            return { ...list, itemCount: count };
+          } catch (err) {
+            console.error("Failed to load items for list", list.listId, err);
+            return { ...list, itemCount: 0 };
+          }
+        })
+      );
+
+      setRecentPublicLists(listsWithCounts);
+    } catch (error) {
+      console.error("Failed to load document lists:", error);
+    } finally {
+      setLoadingRecent(false);
+    }
+  };
+
+  // Lần đầu vào màn hình → load public list
+  useEffect(() => {
+    loadLists();
+  }, []);
+
+  // Khi nhấn Enter trong ô search hoặc bấm icon search
+  const handleSearch = () => {
+    loadLists(searchKeyword);
+  };
 
   const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -52,20 +140,28 @@ const SelfStudyScreen: React.FC = () => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* TOP BAR */}
       <View style={styles.topBar}>
-        {/* 🔍 Search bar */}
+        {/* Search bar */}
         <View style={styles.searchBar}>
-          <Ionicons name="search-outline" size={20} color="#888" />
+          <TouchableOpacity onPress={handleSearch}>
+            <Ionicons name="search-outline" size={20} color="#888" />
+          </TouchableOpacity>
+
           <TextInput
             placeholder="Search"
             placeholderTextColor="#888"
             style={styles.searchInput}
+            value={searchKeyword}
+            onChangeText={setSearchKeyword}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
           />
         </View>
 
-        {/* 📘✏️ Icon vở có bút */}
+        {/* Icon vở có bút */}
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate("AppTabs")}
           style={styles.guideButton}
         >
           <View style={styles.iconWrapper}>
@@ -80,8 +176,9 @@ const SelfStudyScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
+      {/* BODY */}
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
-        {/* 📚 Continue Studying */}
+        {/* Continue Studying (dummy) */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Continue from where you left off</Text>
 
@@ -113,7 +210,9 @@ const SelfStudyScreen: React.FC = () => {
                   color="#10B981"
                   style={styles.progressBar}
                 />
-                <Text style={styles.progressText}>{item.done} cards reviewed</Text>
+                <Text style={styles.progressText}>
+                  {item.done} cards reviewed
+                </Text>
 
                 <TouchableOpacity style={styles.continueButton}>
                   <Text style={styles.continueText}>Continue</Text>
@@ -122,7 +221,7 @@ const SelfStudyScreen: React.FC = () => {
             ))}
           </ScrollView>
 
-          {/* ⏺ Dots indicator */}
+          {/* Dots indicator */}
           <View style={styles.dots}>
             {lessons.map((_, i) => (
               <TouchableOpacity
@@ -138,28 +237,57 @@ const SelfStudyScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* 🕒 Recent Lessons */}
+        {/* Recent – Đổ từ API + itemCount */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent</Text>
 
-          {recentLessons.map((lesson, index) => (
-            <TouchableOpacity key={index} style={styles.recentItem}>
-              <View style={styles.iconContainer}>
-                <Ionicons name="layers-outline" size={20} color="#555" />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.lessonName}>{lesson.title}</Text>
-                <Text style={styles.lessonAuthor}>
-                  {lesson.cards} cards · {lesson.author}
-                </Text>
-              </View>
-              <Ionicons name="duplicate-outline" size={20} color="#888" />
-            </TouchableOpacity>
-          ))}
+          {loadingRecent && (
+            <Text style={{ paddingHorizontal: 20, color: "#777" }}>
+              Loading...
+            </Text>
+          )}
+
+          {!loadingRecent && recentPublicLists.length === 0 && (
+            <Text style={{ paddingHorizontal: 20, color: "#777" }}>
+              No results found
+              {searchKeyword.trim() ? ` for "${searchKeyword.trim()}"` : "."}
+            </Text>
+          )}
+
+          {!loadingRecent &&
+            recentPublicLists.map((lesson, index) => (
+              <TouchableOpacity
+                key={lesson.listId ?? index}
+                style={styles.recentItem}
+                onPress={() =>
+                  navigation.navigate("DocumentListDetail", {
+                    listId: lesson.listId,
+                    title: lesson.title,
+                    author: lesson.fullName,
+                    itemCount: lesson.itemCount ?? 0,
+                  })
+                }
+              >
+                <View style={styles.iconContainer}>
+                  <Ionicons name="layers-outline" size={20} color="#555" />
+                </View>
+
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.lessonName}>{lesson.title}</Text>
+                  <Text style={styles.lessonAuthor}>
+                    {(lesson.itemCount ?? 0) +
+                      " cards · " +
+                      (lesson.fullName ?? "")}
+                  </Text>
+                </View>
+
+                <Ionicons name="duplicate-outline" size={20} color="#888" />
+              </TouchableOpacity>
+            ))}
         </View>
       </ScrollView>
 
-      {/* ✅ Bottom Navigation */}
+      {/* Bottom Navigation */}
       <SelfStudyBottomBar activeTab={activeTab} onTabPress={setActiveTab} />
     </SafeAreaView>
   );
