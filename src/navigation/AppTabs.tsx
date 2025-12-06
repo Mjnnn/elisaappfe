@@ -2,13 +2,15 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 // Import các màn hình chính (Bạn cần tạo các file này sau)
-import HomeScreen from '../screens/MainScreen/HomeScreen'; // Khoá học
-import RankingScreen from '../screens/MainScreen/RankingScreen'; // Xếp Hạng
-import ChatAIScreen from '../screens/MainScreen/ChatAIScreen'; // Chat AI
-import NotificationScreen from '../screens/MainScreen/NotificationScreen'; // Thông Báo
-import SettingsScreen from '../screens/MainScreen/SettingsScreen'; // Cài Đặt
+import HomeScreen from '../screens/MainScreen/HomeScreen/HomeScreen'; // Khoá học
+import RankingScreen from '../screens/MainScreen/RankingScreen/RankingScreen'; // Xếp Hạng
+import ChatAIScreen from '../screens/MainScreen/ChatAIScreen/ChatAIScreen'; // Chat AI
+import NotificationScreen from '../screens/MainScreen/NotificationScreen/NotificationScreen'; // Thông Báo
+import SettingsScreen from '../screens/MainScreen/AccountScreen/SettingsScreen'; // Cài Đặt
+import AccountScreen from '../screens/MainScreen/AccountScreen/AccountScreen';
 
 // --- Định nghĩa Kiểu cho Tabs ---
 export type AppTabsParamList = {
@@ -16,7 +18,7 @@ export type AppTabsParamList = {
     ChatAI: undefined;
     Ranking: undefined;
     Notifications: undefined;
-    Settings: undefined;
+    Account: undefined;
 };
 
 const Tab = createBottomTabNavigator<AppTabsParamList>();
@@ -26,6 +28,8 @@ const COLOR_PRIMARY = '#3B82F6';
 const COLOR_INACTIVE = '#AFAFAF';
 
 const AppTabs: React.FC = () => {
+    const insets = useSafeAreaInsets();
+
     return (
         <Tab.Navigator
             initialRouteName="Home"
@@ -73,11 +77,11 @@ const AppTabs: React.FC = () => {
                             );
                             break;
 
-                        case 'Settings':
+                        case 'Account':
                             // Cài Đặt: Sử dụng 'cog' hoặc 'account-settings' (MaterialCommunityIcons)
                             iconComponent = (
                                 <MaterialCommunityIcons
-                                    name={focused ? 'cog' : 'cog-outline'}
+                                    name={focused ? 'account' : 'account-outline'}
                                     size={size}
                                     color={color}
                                 />
@@ -95,9 +99,20 @@ const AppTabs: React.FC = () => {
                 tabBarActiveTintColor: COLOR_PRIMARY,
                 tabBarInactiveTintColor: COLOR_INACTIVE,
                 tabBarStyle: {
-                    height: Platform.OS === 'ios' ? 90 : 60, // Tăng chiều cao trên iOS để tính cả Safe Area
-                    paddingBottom: Platform.OS === 'ios' ? 30 : 5, // Đệm dưới cho Android và iOS
+                    // Chiều cao tự động tính toán theo Safe Area
+                    height: 60 + (insets.bottom > 0 ? insets.bottom : 10),
+
+                    // Padding đáy tự động (nếu máy có thanh vuốt thì đệm nhiều, không thì đệm ít)
+                    paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+
                     paddingTop: 5,
+                    backgroundColor: 'white',
+                    borderTopWidth: 0,
+                    elevation: 10,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
                 },
                 tabBarLabelStyle: {
                     fontSize: 12,
@@ -127,9 +142,9 @@ const AppTabs: React.FC = () => {
                 options={{ title: 'Thông báo' }}
             />
             <Tab.Screen
-                name="Settings"
-                component={SettingsScreen}
-                options={{ title: 'Cài đặt' }}
+                name="Account"
+                component={AccountScreen}
+                options={{ title: 'Tài khoản' }}
             />
         </Tab.Navigator>
     );

@@ -60,6 +60,7 @@ const LoginScreen: React.FC = () => {
       // ✅ Lưu session
       await AsyncStorage.setItem("userId", String(data.userId));
       await AsyncStorage.setItem("email", data.email);
+      await AsyncStorage.setItem("fullName", data.fullName);
 
       Toast.show({
         type: 'success', // 👈 Loại thông báo có icon thành công
@@ -96,7 +97,16 @@ const LoginScreen: React.FC = () => {
     console.log(`Đăng nhập bằng ${platform} được nhấn`);
   };
 
-  const handleGoBack = () => navigation.goBack();
+  const handleGoBack = () => {
+    // Kiểm tra xem có thể quay lại không
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      console.log("Không còn màn hình nào phía trước để quay lại.");
+      // Tùy chọn: Nếu không quay lại được thì đưa về Trang chủ (để user không bị kẹt)
+      // navigation.navigate('AppTabs'); 
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
