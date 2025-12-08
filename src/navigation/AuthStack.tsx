@@ -27,6 +27,12 @@ import LessonScreen from '../screens/TeacherScreen/Lesson/LesssonScreen';
 import ListeningPracticeScreen from '../screens/MainScreen/EarTraining/ListeningPracticeScreen';
 import LearnByLevelScreen from '../screens/MainScreen/EarTraining/LearnByLevelScreen';
 import VideoLearningScreen from '../screens/MainScreen/EarTraining/VideoLearningScreen';
+import ChallengeLoadingScreen from '../screens/MainScreen/loading/ChallengeLoadingScreen';
+import MultipleChoiceScreen from "../screens/MainScreen/HomeScreen/MultipleChoiceScreen";
+import SentenceRewritingScreen from "../screens/MainScreen/HomeScreen/SentenceRewritingScreen";
+import ListeningDictationScreen from "../screens/MainScreen/HomeScreen/ListeningDictationScreen";
+import ClozeScreen from "../screens/MainScreen/HomeScreen/ClozeScreen";
+import OrderingScreen from "../screens/MainScreen/HomeScreen/OrderingScreen";
 
 // Router Teacher
 import AppTabLesson from './AppTabLesson';
@@ -106,11 +112,55 @@ export type AuthStackParamList = {
     section: number;
     targetRoute: keyof AuthStackParamList;
   };
+
+  ChallengeLoading: {
+    lessonId: number;
+    lessonTitle: string;
+    section: number;
+    targetRoute: keyof AuthStackParamList;
+  };
+
+  MultipleChoiceScreen: {
+    lessonId: number;
+    lessonTitle: string;
+    section: number;
+  }
+
+  SentenceRewritingScreen: {
+    lessonId: number;
+    lessonTitle: string;
+    section: number;
+    currentScore: number;
+  }
+
+  ListeningDictationScreen: {
+    lessonId: number;
+    lessonTitle: string;
+    section: number;
+    currentScore: number;
+  }
+
+  ClozeScreen: {
+    lessonId: number;
+    lessonTitle: string;
+    section: number;
+    currentScore: number;
+  }
+
+  OrderingScreen: {
+    lessonId: number;
+    lessonTitle: string;
+    section: number;
+    currentScore: number;
+  }
+
+
   VocabularyScreen: {
     lessonId: number;
     lessonTitle: string;
     section: number;
   };
+
   VocabularyPractice: {
     lessonId: number;
     lessonTitle: string;
@@ -215,6 +265,13 @@ const AuthStack: React.FC = () => {
       <Stack.Screen name="CommonLevelScreen" component={CommonLevelScreen} />
       <Stack.Screen name="LearnByLevelScreen" component={LearnByLevelScreen} />
       <Stack.Screen name="VideoLearningScreen" component={VideoLearningScreen} />
+      <Stack.Screen name="ChallengeLoading" component={ChallengeLoadingScreen} />
+      <Stack.Screen name="MultipleChoiceScreen" component={MultipleChoiceScreen} />
+      <Stack.Screen name="SentenceRewritingScreen" component={SentenceRewritingScreen} />
+      <Stack.Screen name="ListeningDictationScreen" component={ListeningDictationScreen} />
+      <Stack.Screen name="ClozeScreen" component={ClozeScreen} />
+      <Stack.Screen name="OrderingScreen" component={OrderingScreen} />
+
     </Stack.Navigator>
   );
 };
