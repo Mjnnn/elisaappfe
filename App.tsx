@@ -2,16 +2,15 @@
 import { StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AuthStack from './src/navigation/AuthStack';
-import Toast from 'react-native-toast-message'; // ✅ Cần import ĐÚNG
+import Toast from 'react-native-toast-message';
 
 export default function App() {
   return (
-    <View style={styles.container}> 
+    <View style={styles.container}>
       <NavigationContainer>
-        {/* AuthStack là con trực tiếp của NavigationContainer (Rất đúng) */}
-        <AuthStack /> 
+        <AuthStack />
       </NavigationContainer>
-      <Toast /> 
+      <Toast />
     </View>
   );
 }

@@ -254,7 +254,7 @@ const LearningPath = forwardRef<LearningPathHandle, {}>((props, ref) => {
                 } catch (e) { console.error(e); }
             } else { Alert.alert("Đã nhận", "Bạn đã mở chiếc rương này rồi!"); }
         } else if (node.type === 'challenge') {
-            navigation.navigate('ChallengeScreen', { challengeId: node.id, challengeTitle: node.title, levelTag: node.levelTag });
+            navigation.navigate('ChallengeLoading', { lessonId: node.id, lessonTitle: node.title, section: 1, targetRoute: 'MultipleChoiceScreen' });
         }
     };
 

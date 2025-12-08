@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
         width: SCREEN_WIDTH,  // Bắt buộc chiều rộng bằng màn hình
         height: SCREEN_HEIGHT, // Bắt buộc chiều cao bằng màn hình
         zIndex: 9999,         // Đảm bảo nó nổi lên trên tất cả các view khác
-        backgroundColor: '#F7FFF0',
+        backgroundColor: '#e3f2faff',
         justifyContent: 'space-between',
         paddingVertical: SCREEN_HEIGHT * 0.1,
     },

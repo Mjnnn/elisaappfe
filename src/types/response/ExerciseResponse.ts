@@ -32,3 +32,38 @@ export interface CombinedQuestion {
     data: MultipleChoiceQuestion | SentenceRewritingQuestion;
     id: string; // Unique ID để key extractor
 }
+
+export interface EnglishListeningDictationResponse {
+  id: number;
+  title: string;
+  audioUrl: string;
+  transcript: string;
+  hintText: string;
+}
+
+export interface EnglishClozeBlankResponse {
+  id: number;
+  blankIndex: number;
+  correctAnswer: string;
+  hint: string | null; 
+}
+
+export interface EnglishClozeExerciseResponse {
+  id: number;
+  title: string;
+  content: string; 
+  blanks: EnglishClozeBlankResponse[]; 
+}
+
+export interface EnglishParagraphSegmentResponse {
+  id: number;
+  content: string;     
+  correctOrder: number; 
+}
+
+export interface EnglishOrderingExerciseResponse {
+  id: number;
+  title: string;
+  hint: string | null;  
+  paragraphs: EnglishParagraphSegmentResponse[]; 
+}
