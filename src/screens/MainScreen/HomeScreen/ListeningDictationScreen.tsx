@@ -162,7 +162,7 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
                 setQuestions(response.data);
             }
         } catch (error) {
-            console.error("Lỗi tải câu hỏi nghe:", error);
+            console.log("Lỗi tải câu hỏi nghe:", error);
             Alert.alert("Lỗi", "Không thể tải bài tập nghe.");
         } finally {
             setLoading(false);
@@ -230,7 +230,7 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
                 });
             }
         } catch (error) {
-            console.error("Audio Play Error:", error);
+            console.log("Audio Play Error:", error);
             setIsPlaying(false);
             setSound(null);
             Alert.alert("Lỗi Audio", "Không thể phát âm thanh này.");
@@ -479,7 +479,7 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
                                 styles.feedbackTitle,
                                 { color: status === 'correct' ? COLORS.success : COLORS.error }
                             ]}>
-                                {status === 'correct' ? 'Chính xác!' : 'Chưa đúng rồi!'}
+                                {status === 'correct' ? 'Chính xác! 🎉"' : 'Chưa đúng rồi! 😢'}
                             </Text>
                             {status === 'wrong' && (
                                 <View>

@@ -153,7 +153,7 @@ const OrderingScreen = ({ route, navigation }: any) => {
                     }
 
                 } catch (error) {
-                    console.error("Lỗi update user progress:", error);
+                    console.log("Lỗi update user progress:", error);
                 }
             }
         };
@@ -184,7 +184,7 @@ const OrderingScreen = ({ route, navigation }: any) => {
                 setQuestions(response.data);
             }
         } catch (error) {
-            console.error("Lỗi tải bài sắp xếp:", error);
+            console.log("Lỗi tải bài sắp xếp:", error);
             Alert.alert("Lỗi", "Không thể tải dữ liệu.");
         } finally {
             setLoading(false);
@@ -257,7 +257,7 @@ const OrderingScreen = ({ route, navigation }: any) => {
     // --- HELPER ---
     const getMascotState = () => {
         if (status === 'correct') return { image: happy, message: "Trí nhớ siêu phàm!" };
-        if (status === 'wrong') return { image: sad, message: "Trật tự chưa đúng rồi." };
+        if (status === 'wrong') return { image: sad, message: "Trật tự chưa đúng rồi!" };
         const currentQ = questions[currentIndex];
         const hint = currentQ?.hint || "Sắp xếp các đoạn văn theo thứ tự hợp lý.";
         return { image: normal, message: hint };
@@ -465,7 +465,7 @@ const OrderingScreen = ({ route, navigation }: any) => {
                                 styles.feedbackTitle,
                                 { color: status === 'correct' ? COLORS.success : COLORS.error }
                             ]}>
-                                {status === 'correct' ? 'Tuyệt vời!' : 'Thử tự vẫn chưa đúng'}
+                                {status === 'correct' ? 'Tuyệt vời! 🎉"' : 'Thử tự không đúng! 😢'}
                             </Text>
                             {status === 'wrong' && (
                                 <Text style={styles.correctText}>Hãy thử sắp xếp lại nhé.</Text>

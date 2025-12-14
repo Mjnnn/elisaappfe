@@ -101,7 +101,7 @@ const GrammarScreen: React.FC = () => {
             }
 
         } catch (error) {
-            console.error("Lỗi tải ngữ pháp:", error);
+            console.log("Lỗi tải ngữ pháp:", error);
             Alert.alert("Thông báo", "Không thể tải dữ liệu ngữ pháp. Vui lòng thử lại sau.");
         } finally {
             setLoading(false);

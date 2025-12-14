@@ -278,7 +278,7 @@ const CommonLevelScreen = ({ route, navigation }: any) => {
                 onRefresh();
 
             } catch (error) {
-                console.error(error);
+                console.log(error);
                 // Nếu lỗi, hiện lại modal nhập liệu để sửa
                 setModalVisible(true);
                 Alert.alert("Lỗi", "Có lỗi xảy ra. Vui lòng kiểm tra lại link hoặc thử lại sau.");

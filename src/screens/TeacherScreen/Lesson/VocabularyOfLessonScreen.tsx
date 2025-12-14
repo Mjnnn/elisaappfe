@@ -111,7 +111,7 @@ const VocabularyOfLessonScreen = () => {
             setIsLastPage(isLast);
             setPage(currentPage);
         } catch (error) {
-            console.error("Error fetching vocabulary:", error);
+            console.log("Error fetching vocabulary:", error);
         } finally {
             setLoading(false);
         }
@@ -243,7 +243,7 @@ const VocabularyOfLessonScreen = () => {
                                 Alert.alert("Thành công", "Đã xoá từ vựng khỏi danh sách.");
 
                             } catch (error) {
-                                console.error("Lỗi xoá từ vựng:", error);
+                                console.log("Lỗi xoá từ vựng:", error);
                                 Alert.alert("Thất bại", "Đã có lỗi xảy ra khi xoá. Vui lòng thử lại.");
                             } finally {
                                 setIsSubmitting(false);

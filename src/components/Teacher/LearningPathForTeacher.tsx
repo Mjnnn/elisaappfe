@@ -180,9 +180,17 @@ const LearningPathForTeacher = forwardRef<LearningPathHandle, {}>((props, ref) =
             navigation.navigate('LoadingForLesson', { lessonId: node.id, lessonTitle: node.title, section: 1, targetRoute: 'AppTabLesson' });
         } else if (node.type === 'treasure') {
             // Teacher Mode: Test mở rương
-            Alert.alert("Teacher Mode", "Đang mở rương báu (Test function)");
+            Alert.alert("Teacher Mode", "Đây là chức năng của hệ thống bạn không cần phải thiết lập, hãy tập trung vào xây dựng lộ trình khoá học nhé 🥰");
         } else if (node.type === 'challenge') {
-            navigation.navigate('ChallengeScreen', { challengeId: node.id, challengeTitle: node.title, levelTag: node.levelTag });
+            navigation.navigate('LoadingForChallenge',
+                {
+                    quoteText: "Đây là thử thách để lên cấp. Bạn hãy thiết kế thử thách có độ khó cao để thách thức năng lực học viên nhé!.",
+                    subtitleText: node.title,
+                    lessonId: node.id,
+                    lessonTitle: node.title,
+                    section: 1,
+                    targetRoute: 'AppTabChallenge'
+                });
         }
     };
 

@@ -116,7 +116,7 @@ const NotificationScreen = () => {
                 setNotifications(sortedData);
             }
         } catch (error) {
-            console.error("Lỗi lấy thông báo:", error);
+            console.log("Lỗi lấy thông báo:", error);
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -145,7 +145,7 @@ const NotificationScreen = () => {
             })));
 
         } catch (error) {
-            console.error("Lỗi đánh dấu đã đọc:", error);
+            console.log("Lỗi đánh dấu đã đọc:", error);
             Alert.alert("Lỗi", "Không thể cập nhật trạng thái.");
         }
     };

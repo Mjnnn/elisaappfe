@@ -87,7 +87,7 @@ const GrammarOfLessonScreen = () => {
             LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
             setGrammarList(data);
         } catch (error) {
-            console.error("Lỗi lấy danh sách ngữ pháp:", error);
+            console.log("Lỗi lấy danh sách ngữ pháp:", error);
             Alert.alert("Lỗi kết nối", "Không thể tải danh sách ngữ pháp của bài học này.");
         } finally {
             setLoading(false);
@@ -219,7 +219,7 @@ const GrammarOfLessonScreen = () => {
             resetForm();
 
         } catch (error) {
-            console.error("Lỗi khi lưu ngữ pháp:", error);
+            console.log("Lỗi khi lưu ngữ pháp:", error);
             Alert.alert("Lỗi", "Không thể lưu ngữ pháp. Vui lòng kiểm tra lại kết nối.");
         } finally {
             setIsSubmitting(false);
@@ -243,7 +243,7 @@ const GrammarOfLessonScreen = () => {
                             setGrammarList(grammarList.filter(item => item.grammarId !== id));
                             Alert.alert("Thành công", "Đã xoá ngữ pháp.");
                         } catch (error) {
-                            console.error("Lỗi xoá ngữ pháp:", error);
+                            console.log("Lỗi xoá ngữ pháp:", error);
                             Alert.alert("Lỗi", "Không thể xoá ngữ pháp. Vui lòng thử lại.");
                         }
                     }

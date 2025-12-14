@@ -132,7 +132,7 @@ const VocabularyScreen: React.FC = () => {
             const data: VocabularyPageResponse = response.data;
             setVocabularyData(data.content);
         } catch (error) {
-            console.error("Lỗi:", error);
+            console.log("Lỗi:", error);
             Alert.alert("Lỗi", "Không thể tải dữ liệu.");
         } finally {
             setLoading(false);
