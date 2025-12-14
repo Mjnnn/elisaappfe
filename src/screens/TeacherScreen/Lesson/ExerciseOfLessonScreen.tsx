@@ -134,7 +134,7 @@ const ExerciseOfLessonScreen = () => {
                     setArrList(data.listSentenceRewriting || []);
                 }
             } catch (error) {
-                console.error("Lỗi lấy bài tập:", error);
+                console.log("Lỗi lấy bài tập:", error);
                 Alert.alert("Lỗi", "Không thể tải danh sách bài tập.");
             } finally {
                 setLoading(false);
@@ -298,7 +298,7 @@ const ExerciseOfLessonScreen = () => {
             Alert.alert("Thành công", isEditing ? "Cập nhật bài tập thành công!" : "Thêm mới bài tập thành công!");
 
         } catch (error) {
-            console.error("Lỗi khi lưu:", error);
+            console.log("Lỗi khi lưu:", error);
             Alert.alert("Thất bại", "Đã có lỗi xảy ra khi lưu dữ liệu.");
         }
     };
@@ -321,7 +321,7 @@ const ExerciseOfLessonScreen = () => {
                         }
                         Alert.alert("Thành công", "Đã xoá bài tập.");
                     } catch (error) {
-                        console.error("Lỗi khi xoá:", error);
+                        console.log("Lỗi khi xoá:", error);
                         Alert.alert("Lỗi", "Không thể xoá bài tập này.");
                     }
                 }

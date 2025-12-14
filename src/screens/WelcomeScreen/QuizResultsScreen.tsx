@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { quizQuestions } from '../../services/data/QuizData';
 import { AuthStackParamList } from '../../navigation/AuthStack';
 import foxImage from '../../../assets/images/logo/Elisa.png';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import userProgressService from '../../services/userProgressService';
+import userXPService from '../../services/userXPService';
+import notificationService from '../../services/notificationService';
 
 // Định nghĩa kiểu Route
 type QuizResultsRouteProp = RouteProp<AuthStackParamList, 'QuizResults'>;
@@ -26,6 +30,36 @@ const QuizResultsScreen: React.FC = () => {
     const navigation = useNavigation<QuizResultsScreenNavigationProp>();
     const route = useRoute<QuizResultsRouteProp>();
     const { quizAnswers, learningLanguage } = route.params;
+    const [userId, setUserId] = useState<number | null>(null);
+
+    // --- Fetch userId from AsyncStorage ---
+    useEffect(() => {
+        const fetchUserId = async () => {
+            const userIdString = await AsyncStorage.getItem("userId");
+            if (!userIdString) {
+                Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng.");
+                return;
+            }
+            setUserId(Number(userIdString));
+        };
+        fetchUserId();
+    }, []);
+
+    const setUpLesson = async (lessonId: number) => {
+        try {
+
+            const userIdString = await AsyncStorage.getItem("userId");
+            const userId = Number(userIdString);
+            console.log("===> Chuyển người dùng đến bài học:", { userId, lessonId });
+            await userProgressService.updateUserProgress({
+                userId: userId,
+                lessonId: lessonId,
+                section: 1
+            });
+        } catch (error) {
+            console.log("Lỗi khi cập nhật tiến độ bài học:", error);
+        }
+    };
 
     // --- Logic tính điểm và xác định trình độ ---
     const { score, totalQuestions, userLevelRecommendation } = useMemo(() => {
@@ -58,10 +92,16 @@ const QuizResultsScreen: React.FC = () => {
         let recommendation = '';
 
         // Logic gợi ý trình độ (có thể thay đổi tùy ý)
+        console.log("Tỉ lệ đúng:", percent);
         if (percent >= 80) {
-            recommendation = 'Trình độ Nâng cao (B2/C1)';
-        } else if (percent >= 50) {
-            recommendation = 'Trình độ Trung cấp (A2/B1)';
+            recommendation = 'Trình độ Nâng cao (B2)';
+            setUpLesson(23);
+        } else if (percent >= 60 && percent < 80) {
+            recommendation = 'Trình độ Trung cấp cao (B1)';
+            setUpLesson(16);
+        } else if (percent >= 40 && percent < 60) {
+            recommendation = 'Trình độ Sơ cấp (A2)';
+            setUpLesson(8);
         } else {
             recommendation = 'Trình độ Sơ cấp (A1)';
         }

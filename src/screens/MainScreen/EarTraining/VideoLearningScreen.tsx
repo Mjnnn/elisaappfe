@@ -107,7 +107,7 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
                         }
                     }
                 } catch (e) {
-                    console.error("Lỗi lấy thời gian video:", e);
+                    console.log("Lỗi lấy thời gian video:", e);
                 }
             }, 250);
         }

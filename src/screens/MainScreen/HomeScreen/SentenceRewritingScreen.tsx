@@ -111,7 +111,7 @@ const SentenceRewritingScreen = ({ route, navigation }: any) => {
                 setQuestions(response.data);
             }
         } catch (error) {
-            console.error("Lỗi lấy câu hỏi:", error);
+            console.log("Lỗi lấy câu hỏi:", error);
             Alert.alert("Lỗi", "Không thể tải câu hỏi.");
         } finally {
             setLoading(false);
@@ -430,7 +430,7 @@ const SentenceRewritingScreen = ({ route, navigation }: any) => {
                                 styles.feedbackTitle,
                                 { color: status === 'correct' ? COLORS.success : COLORS.error }
                             ]}>
-                                {status === 'correct' ? 'Chính xác!' : 'Chưa đúng rồi!'}
+                                {status === 'correct' ? 'Chính xác! 🎉' : 'Chưa đúng rồi! 😢'}
                             </Text>
                             {status === 'wrong' && (
                                 <View>

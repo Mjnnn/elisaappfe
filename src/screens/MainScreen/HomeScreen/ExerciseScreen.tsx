@@ -335,7 +335,7 @@ const ExerciseScreen = () => {
             }
 
         } catch (error) {
-            console.error("Lỗi update user progress:", error);
+            console.log("Lỗi update user progress:", error);
             // Nếu lỗi mạng, vẫn cho user thoát ra
             showPostCompletionOptions();
         }
@@ -367,7 +367,7 @@ const ExerciseScreen = () => {
                     setQuestions(combined);
                 }
             } catch (error) {
-                console.error(error);
+                console.log(error);
                 Alert.alert("Lỗi", "Không thể tải bài tập.");
             } finally {
                 setLoading(false);

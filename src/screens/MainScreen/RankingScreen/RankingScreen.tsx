@@ -63,7 +63,7 @@ const RankingScreen = () => {
                 }
             }
         } catch (error) {
-            console.error("Lỗi lấy bảng xếp hạng:", error);
+            console.log("Lỗi lấy bảng xếp hạng:", error);
         } finally {
             setLoading(false);
             setRefreshing(false);

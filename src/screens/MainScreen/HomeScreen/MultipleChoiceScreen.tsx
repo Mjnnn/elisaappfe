@@ -90,7 +90,7 @@ const MultipleChoiceScreen = ({ route, navigation }: any) => {
                 setQuestions(response.data);
             }
         } catch (error) {
-            console.error("Lỗi lấy câu hỏi:", error);
+            console.log("Lỗi lấy câu hỏi:", error);
             Alert.alert("Lỗi", "Không thể tải câu hỏi. Vui lòng thử lại.");
         } finally {
             setLoading(false);

@@ -5,6 +5,9 @@ import {PracticeResponse, EnglishListeningDictationResponse, EnglishClozeBlankRe
 } from "../types/response/ExerciseResponse";
 import {EnglishMultipleChoiceRequest} from "../types/request/EnglishMultipleChoiceRequest";
 import {EnglishMultipleChoiceResponse} from "../types/response/EnglishMultipleChoiceResponse";
+import {EnglishListeningDictationRequest} from "../types/request/EnglishListeningDictationRequest";
+import {EnglishClozeExerciseRequest} from "../types/request/EnglishClozeExerciseRequest";
+import {EnglishOrderingExerciseRequest} from "../types/request/EnglishOrderingExerciseRequest";
 import {DeleteResponse} from "../types/response/DeleteResponse";
 import {EnglishSentenceRewritingRequest} from "../types/request/EnglishSentenceRewritingRequest";
 import {EnglishSentenceRewritingResponse} from "../types/response/EnglishSentenceRewritingResponse";
@@ -78,6 +81,81 @@ const exerciseService = {
   getOrderingForChallenge:(lessonId: number): Promise<AxiosResponse<EnglishOrderingExerciseResponse[]>> =>{
     return apiService.get(`${BASE_URL}/challenge/ordering/${lessonId}`);
   },
+
+  createListeningDictationQuestion: (
+    lessonId: number, 
+    data: EnglishListeningDictationRequest, 
+    file: File 
+): Promise<AxiosResponse<EnglishListeningDictationResponse>> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const jsonBlob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    formData.append('data', jsonBlob);
+
+    // 3. Gửi request
+    return apiService.post(
+        `${BASE_URL}/create/listening-dictation/${lessonId}`, 
+        formData, 
+        {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            }
+        }
+    );
+},
+
+ updateListeningDictationQuestion: (
+    questionId: number, 
+    data: EnglishListeningDictationRequest
+): Promise<AxiosResponse<EnglishListeningDictationResponse>> => {
+    return apiService.put(`${BASE_URL}/update/listening-dictation/${questionId}`, data);
+},
+
+  deleteListeningDictationQuestion: (
+    questionId: number
+  ): Promise<AxiosResponse<DeleteResponse>> => {
+    return apiService.delete(`${BASE_URL}/delete/listening-dictation/${questionId}`);
+  },
+
+  createClozeExerciseQuestion: (
+    lessonId: number, 
+    data: EnglishClozeExerciseRequest
+  ): Promise<AxiosResponse<EnglishClozeExerciseResponse>> => {
+    return apiService.post(`${BASE_URL}/create/cloze-exercise/${lessonId}`, data);
+  },
+
+  updateClozeExerciseQuestion: (
+    questionId: number, 
+    data: EnglishClozeExerciseRequest
+  ): Promise<AxiosResponse<EnglishClozeExerciseResponse>> => {
+    return apiService.put(`${BASE_URL}/update/cloze-exercise/${questionId}`, data);
+  },
+
+  deleteClozeExerciseQuestion: (
+    questionId: number
+  ): Promise<AxiosResponse<DeleteResponse>> => {
+    return apiService.delete(`${BASE_URL}/delete/cloze-exercise/${questionId}`);
+  },
+
+  createOrderingExerciseQuestion: (
+    lessonId: number, 
+    data: EnglishOrderingExerciseRequest
+  ): Promise<AxiosResponse<EnglishOrderingExerciseResponse>> => {
+    return apiService.post(`${BASE_URL}/create/ordering-exercise/${lessonId}`, data);
+  },
+
+  updateOrderingExerciseQuestion: (
+    questionId: number, 
+    data: EnglishOrderingExerciseRequest
+  ): Promise<AxiosResponse<EnglishOrderingExerciseResponse>> => {
+    return apiService.put(`${BASE_URL}/update/ordering-exercise/${questionId}`, data);
+  },
+
+  deleteOrderingExerciseQuestion: (
+    questionId: number
+  ): Promise<AxiosResponse<DeleteResponse>> => {
+    return apiService.delete(`${BASE_URL}/delete/ordering-exercise/${questionId}`);
+  },  
 
 };
 

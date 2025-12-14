@@ -108,7 +108,7 @@ const AccountScreen = () => {
             });
 
         } catch (error) {
-            console.error("Lỗi lấy thông tin user:", error);
+            console.log("Lỗi lấy thông tin user:", error);
         } finally {
             setLoading(false);
         }
@@ -163,7 +163,7 @@ const AccountScreen = () => {
             setUserInfo(prev => prev ? ({ ...prev, avatarUrl: newAvatarUrl }) : null);
             Alert.alert("Thành công", "Ảnh đại diện đã được cập nhật!");
         } catch (error) {
-            console.error("Lỗi upload ảnh:", error);
+            console.log("Lỗi upload ảnh:", error);
             Alert.alert("Lỗi", "Không thể tải ảnh lên server.");
         } finally {
             setLoading(false);
@@ -218,10 +218,10 @@ const AccountScreen = () => {
             {
                 text: "Đăng xuất", style: "destructive", onPress: async () => {
                     await AsyncStorage.clear();
-                    navigation.dispatch(
+                    navigation.getParent()?.dispatch(
                         CommonActions.reset({
                             index: 0,
-                            routes: [{ name: 'Login' }], // Đảm bảo tên 'Login' đúng y hệt trong App.tsx
+                            routes: [{ name: 'Login' }],
                         })
                     );
                 }

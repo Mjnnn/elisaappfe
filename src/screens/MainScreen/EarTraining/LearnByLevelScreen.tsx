@@ -112,7 +112,7 @@ const LearnByLevelScreen = ({ route, navigation }: any) => {
                     setVideos(response.data);
                 }
             } catch (error) {
-                console.error("Lỗi khi tải danh sách video:", error);
+                console.log("Lỗi khi tải danh sách video:", error);
                 Alert.alert("Thông báo", "Không thể tải dữ liệu bài giảng. Vui lòng kiểm tra kết nối.");
             } finally {
                 setLoading(false);

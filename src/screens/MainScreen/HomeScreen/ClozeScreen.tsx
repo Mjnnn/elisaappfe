@@ -108,7 +108,7 @@ const ClozeScreen = ({ route, navigation }: any) => {
                 setQuestions(response.data);
             }
         } catch (error) {
-            console.error("Lỗi tải bài tập điền từ:", error);
+            console.log("Lỗi tải bài tập điền từ:", error);
             Alert.alert("Lỗi", "Không thể tải dữ liệu.");
         } finally {
             setLoading(false);
@@ -190,7 +190,7 @@ const ClozeScreen = ({ route, navigation }: any) => {
         if (hasError) {
             return { image: sad, message: "Có vài chỗ chưa đúng, hãy xem lại nhé!" };
         }
-        return { image: happy, message: "Xuất sắc! Bạn đã điền đúng hết." };
+        return { image: happy, message: "Xuất sắc! Bạn đã điền đúng hết!" };
     };
 
     // --- HELPER: Render Content with Inputs ---
@@ -426,7 +426,7 @@ const ClozeScreen = ({ route, navigation }: any) => {
                                 styles.feedbackTitle,
                                 { color: Object.values(results).includes('wrong') ? COLORS.error : COLORS.success }
                             ]}>
-                                {Object.values(results).includes('wrong') ? 'Chưa chính xác hoàn toàn' : 'Chính xác!'}
+                                {Object.values(results).includes('wrong') ? 'Chưa chính xác hoàn toàn! 😢' : 'Chính xác! 🎉'}
                             </Text>
                             {Object.values(results).includes('wrong') && (
                                 <Text style={styles.correctText}>Hãy xem đáp án đúng màu đỏ ở trên nhé.</Text>

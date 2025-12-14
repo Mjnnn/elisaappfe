@@ -43,6 +43,9 @@ import LoadingForLesson from '../screens/TeacherScreen/loading/LoadingForLesson'
 import AppTabTeacher from './AppTabTeacher';
 import EarTrainingScreen from '../screens/TeacherScreen/EarTraining/EarTrainingScreen';
 import CommonLevelScreen from '../screens/TeacherScreen/EarTraining/CommonLevelScreen';
+import LoadingForChallenge from '../screens/TeacherScreen/loading/LoadingForChallenge';
+import AppTabChallenge from './AppTabChallenge';
+
 
 // ==== Tự học (Self Study) ====
 import DocumentListDetailScreen from "../screens/selfstudy/DocumentListDetailScreen";
@@ -189,10 +192,12 @@ export type AuthStackParamList = {
   ChangePasswordScreen: { email: string };
   LessonScreen: undefined;
   AppTabLesson: undefined;
+  AppTabChallenge: undefined;
   VocabularyOfLessonScreen: { lessonId: number; lessonTitle: string };
   GrammarOfLessonScreen: { lessonId: number; lessonTitle: string };
   ExerciseOfLessonScreen: { lessonId: number; lessonTitle: string };
   LoadingForLesson: { lessonId: number; lessonTitle: string; section: number; targetRoute: keyof AuthStackParamList };
+  LoadingForChallenge: { quoteText: string; subtitleText: string; lessonId: number; lessonTitle: string; section: number; targetRoute: keyof AuthStackParamList };
   AppTabTeacher: undefined;
   EarTrainingScreen: undefined;
   CommonLevelScreen: { levelId: string };
@@ -260,6 +265,7 @@ const AuthStack: React.FC = () => {
       <Stack.Screen name="GrammarOfLessonScreen" component={GrammarOfLessonScreen} />
       <Stack.Screen name="ExerciseOfLessonScreen" component={ExerciseOfLessonScreen} />
       <Stack.Screen name="LoadingForLesson" component={LoadingForLesson} />
+      <Stack.Screen name="LoadingForChallenge" component={LoadingForChallenge} />
       <Stack.Screen name="AppTabTeacher" component={AppTabTeacher} />
       <Stack.Screen name="EarTrainingScreen" component={EarTrainingScreen} />
       <Stack.Screen name="CommonLevelScreen" component={CommonLevelScreen} />
@@ -271,6 +277,7 @@ const AuthStack: React.FC = () => {
       <Stack.Screen name="ListeningDictationScreen" component={ListeningDictationScreen} />
       <Stack.Screen name="ClozeScreen" component={ClozeScreen} />
       <Stack.Screen name="OrderingScreen" component={OrderingScreen} />
+      <Stack.Screen name="AppTabChallenge" component={AppTabChallenge} />
 
     </Stack.Navigator>
   );

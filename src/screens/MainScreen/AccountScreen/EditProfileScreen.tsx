@@ -150,7 +150,7 @@ const EditProfileScreen = () => {
                 { text: "OK", onPress: () => navigation.goBack() }
             ]);
         } catch (error) {
-            console.error(error);
+            console.log(error);
             Alert.alert("Lỗi", "Không thể cập nhật hồ sơ lúc này.");
         } finally {
             setIsLoading(false);
