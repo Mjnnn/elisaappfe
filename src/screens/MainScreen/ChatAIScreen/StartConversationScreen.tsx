@@ -54,7 +54,7 @@ const StartConversationScreen = () => {
 
                 setTopic(foundTopic || null);
             } catch (error) {
-                console.error("Lỗi lấy chi tiết chủ đề:", error);
+                console.log("Lỗi lấy chi tiết chủ đề:", error);
             } finally {
                 setLoading(false);
             }
