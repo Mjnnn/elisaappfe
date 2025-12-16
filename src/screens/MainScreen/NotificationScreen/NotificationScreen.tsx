@@ -176,7 +176,7 @@ const NotificationScreen = () => {
 
             {/* Header Gradient */}
             <LinearGradient
-                colors={['#3B82F6', '#2563EB']}
+                colors={['#2DD4BF', '#0F766E']}
                 style={styles.header}
             >
                 <View style={styles.headerContent}>
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
     // Header Styles
     header: {
         // 4. Padding Top động: Android cộng thêm StatusBar, iOS để 60px để tránh tai thỏ
-        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 30) + 20 : 100,
+        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 30) + 20 : 60,
         paddingBottom: 25,
         paddingHorizontal: 20,
         borderBottomLeftRadius: 30,

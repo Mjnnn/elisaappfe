@@ -33,6 +33,8 @@ import SentenceRewritingScreen from "../screens/MainScreen/HomeScreen/SentenceRe
 import ListeningDictationScreen from "../screens/MainScreen/HomeScreen/ListeningDictationScreen";
 import ClozeScreen from "../screens/MainScreen/HomeScreen/ClozeScreen";
 import OrderingScreen from "../screens/MainScreen/HomeScreen/OrderingScreen";
+import StartConversationScreen from "../screens/MainScreen/ChatAIScreen/StartConversationScreen";
+import ChatbotScreen from "../screens/MainScreen/ChatAIScreen/ChatbotScreen";
 
 // Router Teacher
 import AppTabLesson from './AppTabLesson';
@@ -203,6 +205,8 @@ export type AuthStackParamList = {
   CommonLevelScreen: { levelId: string };
   LearnByLevelScreen: { levelId: string };
   VideoLearningScreen: { videoId: number };
+  StartConversation: { topicId: number; levelCode: string };
+  ChatbotScreen: { topic: string; levelCode: string };
 };
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
@@ -278,7 +282,8 @@ const AuthStack: React.FC = () => {
       <Stack.Screen name="ClozeScreen" component={ClozeScreen} />
       <Stack.Screen name="OrderingScreen" component={OrderingScreen} />
       <Stack.Screen name="AppTabChallenge" component={AppTabChallenge} />
-
+      <Stack.Screen name="StartConversation" component={StartConversationScreen} />
+      <Stack.Screen name="ChatbotScreen" component={ChatbotScreen} />
     </Stack.Navigator>
   );
 };
