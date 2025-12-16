@@ -88,7 +88,7 @@ const ChatAIScreen = () => {
                 setTopics(res.data);
             }
         } catch (error) {
-            console.error("Lỗi lấy danh sách chủ đề:", error);
+            console.log("Lỗi lấy danh sách chủ đề:", error);
         } finally {
             setLoading(false);
         }

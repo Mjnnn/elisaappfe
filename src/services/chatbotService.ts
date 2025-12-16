@@ -5,12 +5,17 @@ const BASE_URL = "/chatbot";
 
 const chatbotService = {
 
-  pushMessage: (data: FormData) =>
-    apiService.post(`${BASE_URL}/voice/`, data, {
+  pushMessageVoice: (data: FormData) =>
+    apiService.post(`${BASE_URL}/voice`, data, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
     }),
+
+    pushMessageText: (data: any ) =>
+      apiService.post(`${BASE_URL}/text`, data),
+
+
 };
 
 export default chatbotService;
