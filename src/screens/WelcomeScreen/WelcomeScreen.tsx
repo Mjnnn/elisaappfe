@@ -37,7 +37,9 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ navigation }) => {
 
         {/* Khu vực Văn bản */}
         <Text style={styles.title}>Elisa</Text>
-        <Text style={styles.subtitle}>Học miễn phí. Suốt đời.</Text>
+        <Text style={styles.subtitle}>
+          Mở ra cánh cửa thế giới thông qua ngôn ngữ.
+        </Text>
 
         {/* Khu vực Nút bấm */}
         <View style={styles.buttonContainer}>
@@ -82,9 +84,16 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#333',
-    marginBottom: 50,
-    fontFamily: 'System'
+    color: '#3869adff', // Màu Slate-600 đậm hơn một chút để nổi bật trên nền sáng
+    textAlign: 'center',
+    lineHeight: 22,
+    fontStyle: 'italic',
+    fontWeight: '500',
+
+    // --- PHẦN ĐỔ BÓNG CHO CHỮ (TEXT SHADOW) ---
+    textShadowColor: 'rgba(0, 0, 0, 0.15)', // Đổ bóng nhẹ nhàng màu đen trong suốt
+    textShadowOffset: { width: 1, height: 1 }, // Độ lệch bóng (ngang 1px, dọc 1px)
+    textShadowRadius: 3, // Độ nhòe của bóng giúp chữ trông mềm mại hơn
   },
   buttonContainer: {
     width: '100%',
