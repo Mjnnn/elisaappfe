@@ -10,31 +10,24 @@ import {
   Dimensions,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  RouteProp,
-  useNavigation,
-  useRoute,
-} from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Speech from "expo-speech";
 import { Audio } from "expo-av";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import documentItemService from "../../services/documentItemService";
 import favoriteDocumentListService from "../../services/favoriteDocumentListService";
 import StudyModeList, { StudyMode } from "../../components/StudyModeList";
 import { AuthStackParamList } from "../../navigation/AuthStack";
 
-
-
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_HORIZONTAL_MARGIN = 16;
 const FLASHCARD_WIDTH = SCREEN_WIDTH - CARD_HORIZONTAL_MARGIN * 2;
-
-// TODO: lấy userId thật từ context / redux / asyncStorage...
-const CURRENT_USER_ID = 1;
 
 type DetailRouteProp = RouteProp<AuthStackParamList, "DocumentListDetail">;
 type DetailNavProp = NativeStackNavigationProp<
@@ -58,14 +51,37 @@ const DocumentListDetailScreen: React.FC = () => {
 
   const [items, setItems] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-
   const [activeIndex, setActiveIndex] = useState<number>(0);
+
+  // ✅ userId từ AsyncStorage
+  const [userId, setUserId] = useState<number | null>(null);
 
   // favorite state
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [favoriteId, setFavoriteId] = useState<number | null>(null);
   const [favoriteLoading, setFavoriteLoading] = useState<boolean>(false);
 
+  // ✅ Load userId (đã lưu lúc login)
+  useEffect(() => {
+    const loadUserId = async () => {
+      try {
+        const stored = await AsyncStorage.getItem("userId");
+        if (!stored) {
+          setUserId(null);
+          return;
+        }
+        const parsed = Number(stored);
+        setUserId(Number.isNaN(parsed) ? null : parsed);
+      } catch (e) {
+        console.error("Load userId error:", e);
+        setUserId(null);
+      }
+    };
+
+    loadUserId();
+  }, []);
+
+  // Load items + check favorite (khi đã có userId)
   useEffect(() => {
     const fetchItems = async () => {
       try {
@@ -79,15 +95,15 @@ const DocumentListDetailScreen: React.FC = () => {
       }
     };
 
-    const fetchFavorite = async () => {
+    const fetchFavorite = async (uid: number) => {
       try {
-        const res = await favoriteDocumentListService.checkFavorite(
-          CURRENT_USER_ID,
-          listId
-        );
-        // Nếu tìm thấy -> đã favorite
+        const res = await favoriteDocumentListService.checkFavorite(uid, listId);
+
+        // ✅ nếu BE trả object favorite
+        // ví dụ { favoriteId: 123, userId:..., listId:... }
         setIsFavorite(true);
-        setFavoriteId(res.data.favoriteId);
+        const favId = res?.data?.favoriteId ?? res?.data?.id;
+        setFavoriteId(typeof favId === "number" ? favId : null);
       } catch (error: any) {
         // 404 = chưa favorite
         if (error?.response?.status === 404) {
@@ -100,28 +116,26 @@ const DocumentListDetailScreen: React.FC = () => {
     };
 
     fetchItems();
-    fetchFavorite();
-  }, [listId]);
+
+    // ✅ chỉ check favorite khi có userId
+    if (typeof userId === "number") {
+      fetchFavorite(userId);
+    } else {
+      // chưa login / chưa lấy được userId -> coi như chưa favorite
+      setIsFavorite(false);
+      setFavoriteId(null);
+    }
+  }, [listId, userId]);
+
   const handleSelectMode = (mode: StudyMode) => {
     if (mode === "flashcard") {
-      navigation.navigate("FlashcardScreen", {
-        listId,
-        title,
-      });
+      navigation.navigate("FlashcardScreen", { listId, title });
     } else if (mode === "practice_question") {
-      navigation.navigate("PracticeQuestionScreen", {
-        listId,
-        title,
-      });
+      navigation.navigate("PracticeQuestionScreen", { listId, title });
+    } else if (mode === "two_side_speak") {
+      navigation.navigate("TwoSideSpeakScreen", { listId, title });
     }
-    else if (mode === "two_side_speak") {
-        navigation.navigate("TwoSideSpeakScreen", {
-          listId,
-          title,
-        });
-      }
   };
-  
 
   const handleFlashcardScroll = (
     event: NativeSyntheticEvent<NativeScrollEvent>
@@ -131,19 +145,17 @@ const DocumentListDetailScreen: React.FC = () => {
     if (index !== activeIndex) setActiveIndex(index);
   };
 
-  // 🔊 Đọc từ bằng tiếng Anh – cố gắng bật tiếng cả khi iOS ở chế độ silent
   const speakWord = async (text: string) => {
     if (!text) return;
 
     try {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
-        playsInSilentModeIOS: true, // vẫn phát khi iOS ở chế độ silent
+        playsInSilentModeIOS: true,
         staysActiveInBackground: false,
         playThroughEarpieceAndroid: false,
       });
 
-      // dừng voice hiện tại rồi đọc text mới
       Speech.stop();
       Speech.speak(text, {
         language: "en-US",
@@ -155,28 +167,55 @@ const DocumentListDetailScreen: React.FC = () => {
     }
   };
 
+  // ✅ Toggle favorite dùng userId thật từ AsyncStorage
   const toggleFavorite = async () => {
     if (favoriteLoading) return;
+
+    if (typeof userId !== "number") {
+      Alert.alert("Thông báo", "Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
+      navigation.navigate("Login" as never);
+      return;
+    }
+
     try {
       setFavoriteLoading(true);
+
       if (!isFavorite) {
-        // Tạo favorite mới
+        // ✅ tạo favorite: DTO = { userId, listId }
         const res = await favoriteDocumentListService.create({
-          userId: CURRENT_USER_ID,
-          listId: listId,
+          userId,
+          listId,
         });
+
         setIsFavorite(true);
-        setFavoriteId(res.data.favoriteId);
+        const favId = res?.data?.favoriteId ?? res?.data?.id;
+        setFavoriteId(typeof favId === "number" ? favId : null);
       } else {
-        // Đã favorite -> xoá
+        // ✅ đã favorite -> xoá theo favoriteId
         if (favoriteId != null) {
           await favoriteDocumentListService.delete(favoriteId);
+        } else {
+          // fallback: nếu không có favoriteId (BE không trả), check lại rồi xoá
+          try {
+            const check = await favoriteDocumentListService.checkFavorite(
+              userId,
+              listId
+            );
+            const fid = check?.data?.favoriteId ?? check?.data?.id;
+            if (typeof fid === "number") {
+              await favoriteDocumentListService.delete(fid);
+            }
+          } catch (e) {
+            // ignore
+          }
         }
+
         setIsFavorite(false);
         setFavoriteId(null);
       }
     } catch (error) {
       console.error("Toggle favorite failed:", error);
+      Alert.alert("Lỗi", "Không thể cập nhật yêu thích. Vui lòng thử lại.");
     } finally {
       setFavoriteLoading(false);
     }
@@ -186,24 +225,20 @@ const DocumentListDetailScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       {/* HEADER */}
       <View style={styles.header}>
-        {/* Back */}
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color="#111827" />
         </TouchableOpacity>
 
-        {/* Title */}
         <Text style={styles.headerTitle} numberOfLines={1}>
           {title}
         </Text>
 
-        {/* Nút về SelfStudy */}
         <TouchableOpacity onPress={() => navigation.navigate("SelfStudyScreen")}>
           <Ionicons name="home-outline" size={22} color="#111827" />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* FLASHCARD PREVIEW + INFO LIST */}
         <View style={styles.topCardWrapper}>
           <View style={styles.flashcardPreview}>
             {items.length === 0 ? (
@@ -226,14 +261,11 @@ const DocumentListDetailScreen: React.FC = () => {
                       style={[styles.flashcardCard, { width: FLASHCARD_WIDTH }]}
                     >
                       <Text style={styles.flashcardWord}>{item.word}</Text>
-                      <Text style={styles.flashcardMeaning}>
-                        {item.meaning}
-                      </Text>
+                      <Text style={styles.flashcardMeaning}>{item.meaning}</Text>
                     </View>
                   ))}
                 </ScrollView>
 
-                {/* Dots indicator */}
                 <View style={styles.dots}>
                   {items.map((_, index) => (
                     <View
@@ -253,12 +285,14 @@ const DocumentListDetailScreen: React.FC = () => {
           <View style={styles.listInfoRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.listTitle}>{title}</Text>
+
               <View style={styles.authorRow}>
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
                     {author?.charAt(0)?.toUpperCase() ?? "U"}
                   </Text>
                 </View>
+
                 <Text style={styles.authorName}>{author}</Text>
                 <Text style={styles.dotSeparator}>·</Text>
                 <Text style={styles.termCount}>
@@ -267,7 +301,6 @@ const DocumentListDetailScreen: React.FC = () => {
               </View>
             </View>
 
-            {/* Nút favorite góc phải */}
             <TouchableOpacity
               style={styles.favoriteButton}
               onPress={toggleFavorite}
@@ -282,10 +315,8 @@ const DocumentListDetailScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* CÁC CHẾ ĐỘ HỌC */}
         <StudyModeList onSelectMode={handleSelectMode} />
 
-        {/* DANH SÁCH THUẬT NGỮ */}
         <View style={styles.vocabHeaderRow}>
           <Text style={styles.vocabHeader}>Thuật ngữ</Text>
         </View>
@@ -304,7 +335,6 @@ const DocumentListDetailScreen: React.FC = () => {
                 <Text style={styles.meaning}>{item.meaning}</Text>
               </View>
 
-              {/* 🔊 Bấm để đọc tiếng Anh */}
               <TouchableOpacity
                 style={styles.iconButton}
                 onPress={() => speakWord(item.word)}
@@ -341,10 +371,7 @@ const DocumentListDetailScreen: React.FC = () => {
 export default DocumentListDetailScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F9FAFB",
-  },
+  container: { flex: 1, backgroundColor: "#F9FAFB" },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -359,10 +386,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#111827",
   },
-  topCardWrapper: {
-    paddingHorizontal: CARD_HORIZONTAL_MARGIN,
-    marginTop: 4,
-  },
+  topCardWrapper: { paddingHorizontal: CARD_HORIZONTAL_MARGIN, marginTop: 4 },
   flashcardPreview: {
     backgroundColor: "#FFFFFF",
     borderRadius: 24,
@@ -376,16 +400,8 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 3,
   },
-  previewText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  previewSubText: {
-    marginTop: 6,
-    fontSize: 13,
-    color: "#6B7280",
-  },
+  previewText: { fontSize: 18, fontWeight: "600", color: "#111827" },
+  previewSubText: { marginTop: 6, fontSize: 13, color: "#6B7280" },
   flashcardCard: {
     paddingVertical: 30,
     paddingHorizontal: 16,
@@ -394,16 +410,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  flashcardWord: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#111827",
-  },
-  flashcardMeaning: {
-    marginTop: 8,
-    fontSize: 15,
-    color: "#374151",
-  },
+  flashcardWord: { fontSize: 20, fontWeight: "700", color: "#111827" },
+  flashcardMeaning: { marginTop: 8, fontSize: 15, color: "#374151" },
   dots: {
     flexDirection: "row",
     justifyContent: "center",
@@ -417,9 +425,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#D1D5DB",
     marginHorizontal: 4,
   },
-  dotActive: {
-    backgroundColor: "#111827",
-  },
+  dotActive: { backgroundColor: "#111827" },
   listInfoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -432,10 +438,7 @@ const styles = StyleSheet.create({
     color: "#111827",
     marginBottom: 4,
   },
-  authorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  authorRow: { flexDirection: "row", alignItems: "center" },
   avatar: {
     width: 28,
     height: 28,
@@ -445,26 +448,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginRight: 8,
   },
-  avatarText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#111827",
-  },
-  authorName: {
-    fontSize: 13,
-    color: "#111827",
-  },
-  dotSeparator: {
-    marginHorizontal: 4,
-    color: "#6B7280",
-  },
-  termCount: {
-    fontSize: 13,
-    color: "#6B7280",
-  },
-  favoriteButton: {
-    marginLeft: 12,
-  },
+  avatarText: { fontSize: 14, fontWeight: "700", color: "#111827" },
+  authorName: { fontSize: 13, color: "#111827" },
+  dotSeparator: { marginHorizontal: 4, color: "#6B7280" },
+  termCount: { fontSize: 13, color: "#6B7280" },
+  favoriteButton: { marginLeft: 12 },
   vocabHeaderRow: {
     marginTop: 16,
     paddingHorizontal: 16,
@@ -472,11 +460,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
-  vocabHeader: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111827",
-  },
+  vocabHeader: { fontSize: 15, fontWeight: "600", color: "#111827" },
   vocabItem: {
     marginTop: 8,
     marginHorizontal: 16,
@@ -487,17 +471,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  word: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  meaning: {
-    fontSize: 13,
-    color: "#4B5563",
-    marginTop: 2,
-  },
-  iconButton: {
-    marginLeft: 8,
-  },
+  word: { fontSize: 15, fontWeight: "600", color: "#111827" },
+  meaning: { fontSize: 13, color: "#4B5563", marginTop: 2 },
+  iconButton: { marginLeft: 8 },
 });

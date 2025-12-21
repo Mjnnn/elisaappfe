@@ -1,7 +1,9 @@
 import React from "react";
-import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { View, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+
+import SelfStudyBottomBarItem from "../screens/selfstudy/SelfStudyBottomBarItem";
+import { SELF_STUDY_TABS } from "../screens/selfstudy/selfStudyBottomTabs";
 
 interface SelfStudyBottomBarProps {
   activeTab?: string;
@@ -12,47 +14,50 @@ const SelfStudyBottomBar: React.FC<SelfStudyBottomBarProps> = ({
   activeTab = "Home",
   onTabPress = () => {},
 }) => {
-  const navigation = useNavigation();
-
-  const tabs = [
-    { name: "Home", icon: "home-outline" },
-    { name: "Create", icon: "add-outline" },
-    { name: "Library", icon: "folder-outline" },
-    { name: "Logout", icon: "log-out-outline" },
-  ];
+  const navigation = useNavigation<any>();
 
   const handlePress = (tabName: string) => {
     if (tabName === "Logout") {
-      navigation.navigate("Login" as never); // 👉 điều hướng sang màn Login
-    } else {
-      onTabPress(tabName);
+      navigation.navigate("Login" as never);
+      return;
     }
+  
+    if (tabName === "Library") {
+      navigation.navigate("LibraryScreen" as never);
+      return;
+    }
+  
+    if (tabName === "Create") {
+      navigation.navigate("CreateDocumentList" as never);
+      return;
+    }
+  
+    if (tabName === "Home") {
+      navigation.navigate("SelfStudyScreen" as never);
+      return;
+    }
+    if (tabName === "Class") {
+      navigation.navigate("ClassScreen");
+      return;
+    }
+  
+    onTabPress(tabName);
   };
+  
 
   return (
     <View style={styles.bottomNav}>
-      {tabs.map((tab) => {
+      {SELF_STUDY_TABS.map((tab) => {
         const isActive = activeTab === tab.name;
+
         return (
-          <TouchableOpacity
+          <SelfStudyBottomBarItem
             key={tab.name}
-            style={styles.navItem}
+            label={tab.name}
+            icon={tab.icon as any}
+            isActive={isActive}
             onPress={() => handlePress(tab.name)}
-          >
-            <Ionicons
-              name={tab.icon as any}
-              size={tab.name === "Create" ? 26 : 22}
-              color={isActive ? "#3B82F6" : "#333"}
-            />
-            <Text
-              style={[
-                styles.navText,
-                { color: isActive ? "#3B82F6" : "#333" },
-              ]}
-            >
-              {tab.name}
-            </Text>
-          </TouchableOpacity>
+          />
         );
       })}
     </View>
@@ -72,12 +77,5 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     width: "100%",
-  },
-  navItem: {
-    alignItems: "center",
-  },
-  navText: {
-    fontSize: 12,
-    marginTop: 4,
   },
 });

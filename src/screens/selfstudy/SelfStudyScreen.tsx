@@ -1,6 +1,6 @@
 // src/screens/selfstudy/SelfStudyScreen.tsx
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,13 @@ import {
   TouchableOpacity,
   ScrollView,
   TextInput,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
-  Dimensions,
+  Alert,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { ProgressBar } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import SelfStudyBottomBar from "../../components/SelfStudyBottomBar";
 import { useNavigation } from "@react-navigation/native";
 import { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -23,11 +23,9 @@ import documentListService from "../../services/documentListService";
 import documentItemService from "../../services/documentItemService";
 import { AuthStackParamList } from "../../navigation/AuthStack";
 
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CARD_MARGIN_RIGHT = 14;
-const CARD_WIDTH = Math.round(SCREEN_WIDTH * 0.8);
+// ✅ Logo giống HomeScreen của bạn
+import foxImage from "../../../assets/images/logo/Elisa.png";
 
-// Kiểu cho 1 document list
 interface DocumentListItem {
   listId: number;
   userId: number;
@@ -38,11 +36,8 @@ interface DocumentListItem {
   type: string;
   createdAt: string;
   isPublic: number;
-  itemCount?: number; // số item (cards) trong list
+  itemCount?: number;
 }
-
-// Kiểu navigation cho màn hình này
-type NavProp = NativeStackNavigationProp<AuthStackParamList, "SelfStudyScreen">;
 
 type SelfStudyNavProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -52,23 +47,31 @@ type SelfStudyNavProp = NativeStackNavigationProp<
 const SelfStudyScreen: React.FC = () => {
   const navigation = useNavigation<SelfStudyNavProp>();
 
-  const [activeIndex, setActiveIndex] = useState<number>(0);
+  // bottom tab
   const [activeTab, setActiveTab] = useState<string>("Home");
-  const scrollRef = useRef<ScrollView | null>(null);
 
-  // Danh sách list public (Recent)
-  const [recentPublicLists, setRecentPublicLists] = useState<DocumentListItem[]>([]);
+  // ✅ header name
+  const [name, setName] = useState<string>("");
+
+  // ✅ search: dùng ref để không re-render liên tục
+  const [showClearButton, setShowClearButton] = useState(false);
+  const searchTextRef = useRef("");
+  const searchInputRef = useRef<TextInput>(null);
+
+  // Recent
+  const [recentPublicLists, setRecentPublicLists] = useState<DocumentListItem[]>(
+    []
+  );
   const [loadingRecent, setLoadingRecent] = useState<boolean>(false);
-  const [searchKeyword, setSearchKeyword] = useState<string>("");
 
-  // Dummy cho phần "Continue from where you left off"
-  const lessons = [
-    { title: "Pass in One Go - Round 3", progress: 0.78, done: "22/28" },
-    { title: "Daily Vocabulary - 24/10", progress: 0.55, done: "15/27" },
-    { title: "Listening Practice - 2", progress: 0.32, done: "9/28" },
-  ];
+  useEffect(() => {
+    const loadUser = async () => {
+      const storedName = await AsyncStorage.getItem("fullName");
+      if (storedName) setName(storedName);
+    };
+    loadUser();
+  }, []);
 
-  // Hàm load danh sách public hoặc search + đếm số item
   const loadLists = async (keyword?: string) => {
     try {
       setLoadingRecent(true);
@@ -77,28 +80,19 @@ const SelfStudyScreen: React.FC = () => {
       const trimmed = (keyword ?? "").trim();
 
       if (!trimmed) {
-        // Không nhập keyword → lấy tất cả public (paged)
         res = await documentListService.getPublicLists(0, 10);
       } else {
-        // Có keyword → search theo title/type
-        res = await documentListService.searchPublicByTitleOrType(
-          trimmed,
-          0,
-          10
-        );
+        res = await documentListService.searchPublicByTitleOrType(trimmed, 0, 10);
       }
 
-      const pageData = res.data; // Page<DocumentListResponse>
+      const pageData = res.data;
       const lists: DocumentListItem[] = pageData.content ?? [];
 
-      // Lấy số item cho từng list
       const listsWithCounts = await Promise.all(
         lists.map(async (list) => {
           try {
             const itemsRes = await documentItemService.getByListId(list.listId);
-            const count = Array.isArray(itemsRes.data)
-              ? itemsRes.data.length
-              : 0;
+            const count = Array.isArray(itemsRes.data) ? itemsRes.data.length : 0;
             return { ...list, itemCount: count };
           } catch (err) {
             console.error("Failed to load items for list", list.listId, err);
@@ -115,142 +109,108 @@ const SelfStudyScreen: React.FC = () => {
     }
   };
 
-  // Lần đầu vào màn hình → load public list
   useEffect(() => {
     loadLists();
   }, []);
 
-  // Khi nhấn Enter trong ô search hoặc bấm icon search
+  // ✅ search handlers (giống HomeScreen)
+  const handleChangeText = (text: string) => {
+    searchTextRef.current = text;
+
+    if (text.length > 0 && !showClearButton) setShowClearButton(true);
+    else if (text.length === 0 && showClearButton) setShowClearButton(false);
+  };
+
   const handleSearch = () => {
-    loadLists(searchKeyword);
+    loadLists(searchTextRef.current);
   };
 
-  const onScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const step = CARD_WIDTH + CARD_MARGIN_RIGHT;
-    const index = Math.round(offsetX / step);
-    if (index !== activeIndex) setActiveIndex(index);
+  const handleClearSearch = () => {
+    searchTextRef.current = "";
+    setShowClearButton(false);
+    searchInputRef.current?.clear();
+    loadLists(""); // reset về all
   };
 
-  const goToIndex = (index: number) => {
-    const x = index * (CARD_WIDTH + CARD_MARGIN_RIGHT);
-    scrollRef.current?.scrollTo({ x, animated: true });
-    setActiveIndex(index);
+  const handleTabPress = (tabName: string) => {
+    setActiveTab(tabName);
+
+    if (tabName === "Home") return;
+
+    if (tabName === "Create") {
+      navigation.navigate("CreateDocumentList");
+      return;
+    }
+
+    if (tabName === "Library") {
+      // nếu bạn đã có LibraryScreen thì đổi sang navigate("LibraryScreen")
+      Alert.alert("Thông báo", "Chưa có màn Library. Bạn tạo route sau nhé.");
+      return;
+    }
+
+    if (tabName === "Class") {
+      Alert.alert("Thông báo", "Chưa có màn Class. Bạn tạo route sau nhé.");
+      return;
+    }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* TOP BAR */}
-      <View style={styles.topBar}>
-        {/* Search bar */}
-        <View style={styles.searchBar}>
-          <TouchableOpacity onPress={handleSearch}>
-            <Ionicons name="search-outline" size={20} color="#888" />
-          </TouchableOpacity>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+      {/* ✅ HEADER giống hình */}
+      <View style={styles.header}>
+        <Image source={foxImage} style={styles.avatar} resizeMode="contain" />
 
-          <TextInput
-            placeholder="Search"
-            placeholderTextColor="#888"
-            style={styles.searchInput}
-            value={searchKeyword}
-            onChangeText={setSearchKeyword}
-            onSubmitEditing={handleSearch}
-            returnKeyType="search"
-          />
+        <View style={styles.centerBox}>
+          <Text style={styles.welcomeText}>Xin chào,</Text>
+          <Text style={styles.username}>{name || "Học viên"}</Text>
         </View>
 
-        {/* Icon vở có bút */}
-        <TouchableOpacity
-          onPress={() => navigation.navigate("AppTabs")}
-          style={styles.guideButton}
-        >
-          <View style={styles.iconWrapper}>
-            <Ionicons name="book-outline" size={24} color="#3B82F6" />
-            <Ionicons
-              name="create-outline"
-              size={16}
-              color="#3B82F6"
-              style={styles.penIcon}
-            />
-          </View>
+        <TouchableOpacity onPress={() => navigation.navigate("AppTabs")}>
+          <Ionicons name="book-outline" size={30} color="#111827" />
         </TouchableOpacity>
+      </View>
+
+      {/* ✅ SEARCH giống hình + có nút X */}
+      <View style={styles.searchContainer}>
+        <TouchableOpacity onPress={handleSearch}>
+          <Ionicons name="search" size={22} color="#6B7280" />
+        </TouchableOpacity>
+
+        <TextInput
+          ref={searchInputRef}
+          style={styles.searchInput}
+          placeholder="Tìm tài liệu..."
+          placeholderTextColor="#9CA3AF"
+          defaultValue=""
+          onChangeText={handleChangeText}
+          returnKeyType="search"
+          onSubmitEditing={handleSearch}
+          autoCorrect={false}
+          spellCheck={false}
+        />
+
+        {showClearButton && (
+          <TouchableOpacity onPress={handleClearSearch}>
+            <Ionicons name="close-circle" size={18} color="#9CA3AF" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* BODY */}
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
-        {/* Continue Studying (dummy) */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Continue from where you left off</Text>
-
-          <ScrollView
-            horizontal
-            ref={scrollRef}
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={CARD_WIDTH + CARD_MARGIN_RIGHT}
-            decelerationRate="fast"
-            snapToAlignment="start"
-            onScroll={onScroll}
-            scrollEventThrottle={16}
-            contentContainerStyle={{ paddingHorizontal: 20, paddingRight: 20 }}
-          >
-            {lessons.map((item, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.lessonCard,
-                  {
-                    width: CARD_WIDTH,
-                    marginRight: CARD_MARGIN_RIGHT,
-                  },
-                ]}
-              >
-                <Text style={styles.lessonTitle}>{item.title}</Text>
-                <ProgressBar
-                  progress={item.progress}
-                  color="#10B981"
-                  style={styles.progressBar}
-                />
-                <Text style={styles.progressText}>
-                  {item.done} cards reviewed
-                </Text>
-
-                <TouchableOpacity style={styles.continueButton}>
-                  <Text style={styles.continueText}>Continue</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
-
-          {/* Dots indicator */}
-          <View style={styles.dots}>
-            {lessons.map((_, i) => (
-              <TouchableOpacity
-                key={i}
-                onPress={() => goToIndex(i)}
-                activeOpacity={0.8}
-              >
-                <View
-                  style={[styles.dot, activeIndex === i && styles.dotActive]}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Recent – Đổ từ API + itemCount */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent</Text>
+         
 
           {loadingRecent && (
-            <Text style={{ paddingHorizontal: 20, color: "#777" }}>
-              Loading...
-            </Text>
+            <Text style={{ paddingHorizontal: 20, color: "#777" }}>Loading...</Text>
           )}
 
           {!loadingRecent && recentPublicLists.length === 0 && (
             <Text style={{ paddingHorizontal: 20, color: "#777" }}>
               No results found
-              {searchKeyword.trim() ? ` for "${searchKeyword.trim()}"` : "."}
+              {searchTextRef.current.trim()
+                ? ` for "${searchTextRef.current.trim()}"`
+                : "."}
             </Text>
           )}
 
@@ -275,9 +235,7 @@ const SelfStudyScreen: React.FC = () => {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.lessonName}>{lesson.title}</Text>
                   <Text style={styles.lessonAuthor}>
-                    {(lesson.itemCount ?? 0) +
-                      " cards · " +
-                      (lesson.fullName ?? "")}
+                    {(lesson.itemCount ?? 0) + " cards · " + (lesson.fullName ?? "")}
                   </Text>
                 </View>
 
@@ -287,8 +245,7 @@ const SelfStudyScreen: React.FC = () => {
         </View>
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <SelfStudyBottomBar activeTab={activeTab} onTabPress={setActiveTab} />
+      <SelfStudyBottomBar activeTab={activeTab} onTabPress={handleTabPress} />
     </SafeAreaView>
   );
 };
@@ -296,110 +253,40 @@ const SelfStudyScreen: React.FC = () => {
 export default SelfStudyScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  topBar: {
+  container: { flex: 1, backgroundColor: "#fff" },
+
+  // ✅ header giống HomeScreen
+  header: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    marginHorizontal: 20,
-    marginTop: 10,
-  },
-  searchBar: {
-    flexDirection: "row",
+    padding: 20,
     alignItems: "center",
-    backgroundColor: "#F1F1F3",
-    flex: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
   },
-  searchInput: {
-    color: "#000",
-    marginLeft: 8,
-    flex: 1,
+  centerBox: { alignItems: "center", flex: 1 },
+  welcomeText: { fontSize: 16, color: "#6B7280" },
+  username: { fontSize: 26, fontWeight: "bold", color: "#111827" },
+  avatar: { width: 50, height: 50 },
+
+  // ✅ search giống HomeScreen
+  searchContainer: {
+    flexDirection: "row",
+    backgroundColor: "#F3F4F6",
+    marginHorizontal: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 8,
   },
-  guideButton: {
-    marginLeft: 10,
-  },
-  iconWrapper: {
-    position: "relative",
-  },
-  penIcon: {
-    position: "absolute",
-    bottom: -2,
-    right: -4,
-  },
-  section: {
-    marginTop: 18,
-  },
+  searchInput: { marginLeft: 10, fontSize: 16, flex: 1, color: "#111" },
+
+  section: { marginTop: 10 },
   sectionTitle: {
     color: "#000",
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 14,
     paddingHorizontal: 20,
-  },
-  lessonCard: {
-    backgroundColor: "#F8F8FA",
-    padding: 16,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  lessonTitle: {
-    color: "#111",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
-  },
-  progressBar: {
-    height: 10,
-    borderRadius: 10,
-    backgroundColor: "#E5E7EB",
-  },
-  progressText: {
-    color: "#555",
-    fontSize: 13,
-    marginVertical: 8,
-  },
-  continueButton: {
-    backgroundColor: "#3B82F6",
-    borderRadius: 14,
-    alignItems: "center",
-    paddingVertical: 10,
-    marginTop: 6,
-  },
-  continueText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  dots: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 12,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 8,
-    backgroundColor: "#C7C7D1",
-    marginHorizontal: 6,
-  },
-  dotActive: {
-    width: 10,
-    height: 10,
-    backgroundColor: "#111",
   },
   recentItem: {
     flexDirection: "row",
@@ -418,13 +305,6 @@ const styles = StyleSheet.create({
     padding: 8,
     marginRight: 12,
   },
-  lessonName: {
-    color: "#111",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  lessonAuthor: {
-    color: "#777",
-    fontSize: 13,
-  },
+  lessonName: { color: "#111", fontSize: 15, fontWeight: "600" },
+  lessonAuthor: { color: "#777", fontSize: 13 },
 });
