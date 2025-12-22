@@ -3,31 +3,31 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import WelcomeScreen from '../screens/WelcomeScreen/WelcomeScreen';
-import LoginScreen from '../screens/AuthScreen/LoginScreen';
-import CourseSelectionScreen from '../screens/WelcomeScreen/CourseSelectionScreen';
-import GoalSelectionScreen from '../screens/WelcomeScreen/GoalSelectionScreen';
-import LevelSelectionScreen from '../screens/WelcomeScreen/LevelSelectionScreen';
-import DailyGoalScreen from '../screens/WelcomeScreen/DailyGoalScreen';
-import RegisterScreen from '../screens/AuthScreen/RegisterScreen';
-import HomeScreen from '../screens/MainScreen/HomeScreen/HomeScreen';
-import PlacementQuizScreen from '../screens/WelcomeScreen/PlacementQuizScreen';
-import QuizResultsScreen from '../screens/WelcomeScreen/QuizResultsScreen';
-import SelfStudyScreen from '../screens/selfstudy/SelfStudyScreen';
-import AppTabs from './AppTabs';
-import LessonLoadingScreen from '../screens/MainScreen/loading/LessonLoadingScreen';
-import VocabularyScreen from '../screens/MainScreen/HomeScreen/VocabularyScreen';
-import VocabularyPracticeScreen from '../screens/MainScreen/HomeScreen/VocabularyPracticeScreen';
-import GrammarScreen from '../screens/MainScreen/HomeScreen/GrammarScreen';
-import ExerciseLoadingScreen from '../screens/MainScreen/loading/ExerciseLoadingScreen';
-import ExerciseScreen from '../screens/MainScreen/HomeScreen/ExerciseScreen';
-import EditProfileScreen from '../screens/MainScreen/AccountScreen/EditProfileScreen';
-import ChangePasswordScreen from '../screens/MainScreen/AccountScreen/ChangePasswordScreen';
-import LessonScreen from '../screens/TeacherScreen/Lesson/LesssonScreen';
-import ListeningPracticeScreen from '../screens/MainScreen/EarTraining/ListeningPracticeScreen';
-import LearnByLevelScreen from '../screens/MainScreen/EarTraining/LearnByLevelScreen';
-import VideoLearningScreen from '../screens/MainScreen/EarTraining/VideoLearningScreen';
-import ChallengeLoadingScreen from '../screens/MainScreen/loading/ChallengeLoadingScreen';
+import WelcomeScreen from "../screens/WelcomeScreen/WelcomeScreen";
+import LoginScreen from "../screens/AuthScreen/LoginScreen";
+import CourseSelectionScreen from "../screens/WelcomeScreen/CourseSelectionScreen";
+import GoalSelectionScreen from "../screens/WelcomeScreen/GoalSelectionScreen";
+import LevelSelectionScreen from "../screens/WelcomeScreen/LevelSelectionScreen";
+import DailyGoalScreen from "../screens/WelcomeScreen/DailyGoalScreen";
+import RegisterScreen from "../screens/AuthScreen/RegisterScreen";
+import HomeScreen from "../screens/MainScreen/HomeScreen/HomeScreen";
+import PlacementQuizScreen from "../screens/WelcomeScreen/PlacementQuizScreen";
+import QuizResultsScreen from "../screens/WelcomeScreen/QuizResultsScreen";
+import SelfStudyScreen from "../screens/selfstudy/SelfStudyScreen";
+import AppTabs from "./AppTabs";
+import LessonLoadingScreen from "../screens/MainScreen/loading/LessonLoadingScreen";
+import VocabularyScreen from "../screens/MainScreen/HomeScreen/VocabularyScreen";
+import VocabularyPracticeScreen from "../screens/MainScreen/HomeScreen/VocabularyPracticeScreen";
+import GrammarScreen from "../screens/MainScreen/HomeScreen/GrammarScreen";
+import ExerciseLoadingScreen from "../screens/MainScreen/loading/ExerciseLoadingScreen";
+import ExerciseScreen from "../screens/MainScreen/HomeScreen/ExerciseScreen";
+import EditProfileScreen from "../screens/MainScreen/AccountScreen/EditProfileScreen";
+import ChangePasswordScreen from "../screens/MainScreen/AccountScreen/ChangePasswordScreen";
+import LessonScreen from "../screens/TeacherScreen/Lesson/LesssonScreen";
+import ListeningPracticeScreen from "../screens/MainScreen/EarTraining/ListeningPracticeScreen";
+import LearnByLevelScreen from "../screens/MainScreen/EarTraining/LearnByLevelScreen";
+import VideoLearningScreen from "../screens/MainScreen/EarTraining/VideoLearningScreen";
+import ChallengeLoadingScreen from "../screens/MainScreen/loading/ChallengeLoadingScreen";
 import MultipleChoiceScreen from "../screens/MainScreen/HomeScreen/MultipleChoiceScreen";
 import SentenceRewritingScreen from "../screens/MainScreen/HomeScreen/SentenceRewritingScreen";
 import ListeningDictationScreen from "../screens/MainScreen/HomeScreen/ListeningDictationScreen";
@@ -37,23 +37,29 @@ import StartConversationScreen from "../screens/MainScreen/ChatAIScreen/StartCon
 import ChatbotScreen from "../screens/MainScreen/ChatAIScreen/ChatbotScreen";
 
 // Router Teacher
-import AppTabLesson from './AppTabLesson';
-import VocabularyOfLessonScreen from '../screens/TeacherScreen/Lesson/VocabularyOfLessonScreen';
-import GrammarOfLessonScreen from '../screens/TeacherScreen/Lesson/GrammarOfLessonScreen';
-import ExerciseOfLessonScreen from '../screens/TeacherScreen/Lesson/ExerciseOfLessonScreen';
-import LoadingForLesson from '../screens/TeacherScreen/loading/LoadingForLesson';
-import AppTabTeacher from './AppTabTeacher';
-import EarTrainingScreen from '../screens/TeacherScreen/EarTraining/EarTrainingScreen';
-import CommonLevelScreen from '../screens/TeacherScreen/EarTraining/CommonLevelScreen';
-import LoadingForChallenge from '../screens/TeacherScreen/loading/LoadingForChallenge';
-import AppTabChallenge from './AppTabChallenge';
-
+import AppTabLesson from "./AppTabLesson";
+import VocabularyOfLessonScreen from "../screens/TeacherScreen/Lesson/VocabularyOfLessonScreen";
+import GrammarOfLessonScreen from "../screens/TeacherScreen/Lesson/GrammarOfLessonScreen";
+import ExerciseOfLessonScreen from "../screens/TeacherScreen/Lesson/ExerciseOfLessonScreen";
+import LoadingForLesson from "../screens/TeacherScreen/loading/LoadingForLesson";
+import AppTabTeacher from "./AppTabTeacher";
+import EarTrainingScreen from "../screens/TeacherScreen/EarTraining/EarTrainingScreen";
+import CommonLevelScreen from "../screens/TeacherScreen/EarTraining/CommonLevelScreen";
+import LoadingForChallenge from "../screens/TeacherScreen/loading/LoadingForChallenge";
+import AppTabChallenge from "./AppTabChallenge";
 
 // ==== Tự học (Self Study) ====
 import DocumentListDetailScreen from "../screens/selfstudy/DocumentListDetailScreen";
 import FlashcardScreen from "../screens/selfstudy/FlashcardScreen";
 import PracticeQuestionScreen from "../screens/selfstudy/PracticeQuestionScreen";
 import TwoSideSpeakScreen from "../screens/selfstudy/TwoSideSpeakScreen";
+import LibraryScreen from "../screens/selfstudy/LibraryScreen";
+import EditDocumentListScreen from "../screens/selfstudy/EditDocumentListScreen";
+import CreateDocumentListScreen from "../screens/selfstudy/CreateDocumentListScreen";
+import ClassDetailScreen from "../screens/selfstudy/ClassDetailScreen";
+import CreateClassScreen from "../screens/selfstudy/CreateClassScreen";
+import ClassScreen from "../screens/selfstudy/ClassScreen";
+
 
 // ================== Khai báo các route ==================
 export type AuthStackParamList = {
@@ -88,6 +94,16 @@ export type AuthStackParamList = {
   // ===== Self Study =====
   SelfStudyScreen: undefined;
 
+  CreateDocumentList: undefined;
+  LibraryScreen: undefined;
+
+  ClassScreen: undefined;
+  CreateClass: undefined;
+  ClassDetail: { classId: number; mode?: "OWNER" | "JOINED"; classUserId?: number | null };
+
+  EditDocumentList: {
+    listId: number;
+  };
   DocumentListDetail: {
     listId: number;
     title: string;
@@ -129,36 +145,35 @@ export type AuthStackParamList = {
     lessonId: number;
     lessonTitle: string;
     section: number;
-  }
+  };
 
   SentenceRewritingScreen: {
     lessonId: number;
     lessonTitle: string;
     section: number;
     currentScore: number;
-  }
+  };
 
   ListeningDictationScreen: {
     lessonId: number;
     lessonTitle: string;
     section: number;
     currentScore: number;
-  }
+  };
 
   ClozeScreen: {
     lessonId: number;
     lessonTitle: string;
     section: number;
     currentScore: number;
-  }
+  };
 
   OrderingScreen: {
     lessonId: number;
     lessonTitle: string;
     section: number;
     currentScore: number;
-  }
-
+  };
 
   VocabularyScreen: {
     lessonId: number;
@@ -172,17 +187,20 @@ export type AuthStackParamList = {
     section: number;
     vocabularyList: any[];
   };
+
   GrammarScreen: {
     lessonId: number;
     lessonTitle: string;
     section: number;
   };
+
   ExerciseLoading: {
     lessonId: number;
     lessonTitle: string;
     section: number;
     targetRoute: keyof AuthStackParamList;
   };
+
   ExerciseScreen: {
     lessonId: number;
     lessonTitle: string;
@@ -192,19 +210,37 @@ export type AuthStackParamList = {
   // ===== Account =====
   EditProfileScreen: { userInitialData: any };
   ChangePasswordScreen: { email: string };
+
   LessonScreen: undefined;
   AppTabLesson: undefined;
   AppTabChallenge: undefined;
+
   VocabularyOfLessonScreen: { lessonId: number; lessonTitle: string };
   GrammarOfLessonScreen: { lessonId: number; lessonTitle: string };
   ExerciseOfLessonScreen: { lessonId: number; lessonTitle: string };
-  LoadingForLesson: { lessonId: number; lessonTitle: string; section: number; targetRoute: keyof AuthStackParamList };
-  LoadingForChallenge: { quoteText: string; subtitleText: string; lessonId: number; lessonTitle: string; section: number; targetRoute: keyof AuthStackParamList };
+
+  LoadingForLesson: {
+    lessonId: number;
+    lessonTitle: string;
+    section: number;
+    targetRoute: keyof AuthStackParamList;
+  };
+
+  LoadingForChallenge: {
+    quoteText: string;
+    subtitleText: string;
+    lessonId: number;
+    lessonTitle: string;
+    section: number;
+    targetRoute: keyof AuthStackParamList;
+  };
+
   AppTabTeacher: undefined;
   EarTrainingScreen: undefined;
   CommonLevelScreen: { levelId: string };
   LearnByLevelScreen: { levelId: string };
   VideoLearningScreen: { videoId: number };
+
   StartConversation: { topicId: number; levelCode: string };
   ChatbotScreen: { topic: string; levelCode: string };
 };
@@ -235,31 +271,25 @@ const AuthStack: React.FC = () => {
       {/* Self Study */}
       <Stack.Screen name="SelfStudyScreen" component={SelfStudyScreen} />
       <Stack.Screen
-        name="DocumentListDetail"
-        component={DocumentListDetailScreen}
+        name="CreateDocumentList"
+        component={CreateDocumentListScreen}
       />
+      <Stack.Screen name="LibraryScreen" component={LibraryScreen} />
+      <Stack.Screen name="EditDocumentList" component={EditDocumentListScreen} />
+      <Stack.Screen name="DocumentListDetail" component={DocumentListDetailScreen} />
       <Stack.Screen name="FlashcardScreen" component={FlashcardScreen} />
-      <Stack.Screen
-        name="PracticeQuestionScreen"
-        component={PracticeQuestionScreen}
-      />
-      <Stack.Screen
-        name="TwoSideSpeakScreen"
-        component={TwoSideSpeakScreen}
-      />
+      <Stack.Screen name="PracticeQuestionScreen" component={PracticeQuestionScreen} />
+      <Stack.Screen name="TwoSideSpeakScreen" component={TwoSideSpeakScreen} />
+      <Stack.Screen name="ClassScreen" component={ClassScreen} />
+      <Stack.Screen name="CreateClass" component={CreateClassScreen} />
+      <Stack.Screen name="ClassDetail" component={ClassDetailScreen} />
 
       {/* Lesson / Exercise flow */}
       <Stack.Screen name="LessonLoading" component={LessonLoadingScreen} />
       <Stack.Screen name="VocabularyScreen" component={VocabularyScreen} />
-      <Stack.Screen
-        name="VocabularyPractice"
-        component={VocabularyPracticeScreen}
-      />
+      <Stack.Screen name="VocabularyPractice" component={VocabularyPracticeScreen} />
       <Stack.Screen name="GrammarScreen" component={GrammarScreen} />
-      <Stack.Screen
-        name="ExerciseLoading"
-        component={ExerciseLoadingScreen}
-      />
+      <Stack.Screen name="ExerciseLoading" component={ExerciseLoadingScreen} />
       <Stack.Screen name="ExerciseScreen" component={ExerciseScreen} />
       <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} />
       <Stack.Screen name="ChangePasswordScreen" component={ChangePasswordScreen} />
