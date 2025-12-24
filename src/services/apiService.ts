@@ -8,7 +8,7 @@ if (__DEV__) {
     // Môi trường Phát triển (Development)
     if (Platform.OS === 'android') {
         // Android Emulator -> truy cập máy host qua IP đặc biệt
-        hostname = '192.168.0.3'; 
+        hostname = '192.168.20.176'; 
         // hostname = '10.0.2.2';
     } else {
         // iOS Simulator -> có thể dùng localhost/127.0.0.1
