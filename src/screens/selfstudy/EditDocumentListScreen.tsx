@@ -42,7 +42,6 @@ type Item = {
 const DOCUMENT_TYPES = [
   { label: "Từ vựng", value: "VOCAB" },
   { label: "Ngữ pháp", value: "GRAMMAR" },
-  { label: "SQL", value: "SQL" },
   { label: "Khác", value: "OTHER" },
 ];
 

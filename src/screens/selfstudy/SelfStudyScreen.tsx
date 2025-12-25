@@ -255,7 +255,6 @@ export default SelfStudyScreen;
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
 
-  // ✅ header giống HomeScreen
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -266,8 +265,6 @@ const styles = StyleSheet.create({
   welcomeText: { fontSize: 16, color: "#6B7280" },
   username: { fontSize: 26, fontWeight: "bold", color: "#111827" },
   avatar: { width: 50, height: 50 },
-
-  // ✅ search giống HomeScreen
   searchContainer: {
     flexDirection: "row",
     backgroundColor: "#F3F4F6",
