@@ -95,7 +95,7 @@ const EditDocumentListScreen: React.FC = () => {
 
       setItems(mapped);
     } catch (e) {
-      console.error("Load edit list error:", e);
+      console.log("Load edit list error:", e);
       Alert.alert("Lỗi", "Không tải được dữ liệu danh sách.");
       navigation.goBack();
     } finally {
@@ -144,7 +144,7 @@ const EditDocumentListScreen: React.FC = () => {
       Alert.alert("Thành công", "Đã lưu danh sách.");
       navigation.navigate("LibraryScreen");
     } catch (e) {
-      console.error("Update list error:", e);
+      console.log("Update list error:", e);
       Alert.alert("Lỗi", "Lưu danh sách thất bại.");
     } finally {
       setLoading(false);
@@ -195,7 +195,7 @@ const EditDocumentListScreen: React.FC = () => {
     const data = await res.json();
 
     if (!res.ok) {
-      console.error("Cloudinary upload failed:", data);
+      console.log("Cloudinary upload failed:", data);
       throw new Error(data?.error?.message ?? "Upload Cloudinary thất bại");
     }
 
@@ -228,7 +228,7 @@ const EditDocumentListScreen: React.FC = () => {
 
       Alert.alert("OK", "Đã upload ảnh.");
     } catch (e: any) {
-      console.error("Pick/upload image error:", e);
+      console.log("Pick/upload image error:", e);
       Alert.alert("Lỗi", e?.message ?? "Upload ảnh thất bại.");
     } finally {
       updateItemLocal(index, { uploadingImage: false });
@@ -269,7 +269,7 @@ const EditDocumentListScreen: React.FC = () => {
 
       Alert.alert("OK", `Đã lưu mục #${index + 1}`);
     } catch (e) {
-      console.error("Save item error:", e);
+      console.log("Save item error:", e);
       Alert.alert("Lỗi", "Lưu mục thất bại.");
     } finally {
       updateItemLocal(index, { saving: false });
@@ -295,7 +295,7 @@ const EditDocumentListScreen: React.FC = () => {
             await documentItemService.delete(it.wordId!);
             setItems((prev) => prev.filter((_, i) => i !== index));
           } catch (e) {
-            console.error("Delete item error:", e);
+            console.log("Delete item error:", e);
             Alert.alert("Lỗi", "Xoá mục thất bại.");
           } finally {
             setLoading(false);
@@ -322,7 +322,7 @@ const EditDocumentListScreen: React.FC = () => {
               Alert.alert("OK", "Đã xoá tài liệu.");
               navigation.navigate("LibraryScreen");
             } catch (e) {
-              console.error("Delete list error:", e);
+              console.log("Delete list error:", e);
               Alert.alert("Lỗi", "Xoá tài liệu thất bại.");
             } finally {
               setLoading(false);

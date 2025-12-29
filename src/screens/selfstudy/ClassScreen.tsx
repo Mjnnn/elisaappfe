@@ -39,7 +39,7 @@ const ClassScreen: React.FC = () => {
         }
         setUserId(parsed);
       } catch (e) {
-        console.error(e);
+        console.log(e);
         Alert.alert("Lỗi", "Không đọc được session đăng nhập.");
       }
     };

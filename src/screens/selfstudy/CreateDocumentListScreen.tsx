@@ -103,7 +103,7 @@ const CreateDocumentListScreen: React.FC = () => {
 
         setUserId(parsed);
       } catch (err) {
-        console.error("Load userId error:", err);
+        console.log("Load userId error:", err);
         Alert.alert("Lỗi", "Không đọc được session đăng nhập.");
       }
     };
@@ -270,7 +270,7 @@ const CreateDocumentListScreen: React.FC = () => {
       updateCard(index, { vocabImage: url, uploading: false });
       Alert.alert("OK", "Đã tải ảnh lên thành công!");
     } catch (e: any) {
-      console.error("Upload image error:", e);
+      console.log("Upload image error:", e);
       updateCard(index, { uploading: false });
       Alert.alert("Lỗi", e?.message ?? "Upload ảnh thất bại.");
     }
@@ -324,7 +324,7 @@ const CreateDocumentListScreen: React.FC = () => {
         created?.listId ?? created?.id ?? created?.documentListId;
 
       if (!listId) {
-        console.error("Create list response:", created);
+        console.log("Create list response:", created);
         Alert.alert("Lỗi", "Không lấy được listId từ API.");
         return;
       }
@@ -338,7 +338,7 @@ const CreateDocumentListScreen: React.FC = () => {
         itemCount: validCards.length,
       });
     } catch (e: any) {
-      console.error("Create document list error:", e);
+      console.log("Create document list error:", e);
       Alert.alert(
         "Lỗi",
         e?.response?.data?.message ?? e?.message ?? "Tạo tài liệu thất bại. Vui lòng thử lại."

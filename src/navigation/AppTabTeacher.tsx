@@ -4,6 +4,7 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import LessonScreen from '../screens/TeacherScreen/Lesson/LesssonScreen';
 import EarTrainingScreen from '../screens/TeacherScreen/EarTraining/EarTrainingScreen';
@@ -20,6 +21,7 @@ const Tab = createBottomTabNavigator<AppTabsParamTeacherList>();
 // Màu sắc chung
 const COLOR_PRIMARY = '#3B82F6';
 const COLOR_INACTIVE = '#AFAFAF';
+
 
 const AppTabTeacher: React.FC = () => {
     const insets = useSafeAreaInsets();

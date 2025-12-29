@@ -160,7 +160,7 @@ const LearningPathForTeacher = forwardRef<LearningPathHandle, {}>((props, ref) =
                     }
                 }
             } catch (error) {
-                console.error("Teacher Mode: Không lấy được progress (không ảnh hưởng hiển thị)", error);
+                console.log("Teacher Mode: Không lấy được progress (không ảnh hưởng hiển thị)", error);
             }
         };
         fetchProgress();

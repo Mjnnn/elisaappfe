@@ -95,7 +95,7 @@ const SelfStudyScreen: React.FC = () => {
             const count = Array.isArray(itemsRes.data) ? itemsRes.data.length : 0;
             return { ...list, itemCount: count };
           } catch (err) {
-            console.error("Failed to load items for list", list.listId, err);
+            console.log("Failed to load items for list", list.listId, err);
             return { ...list, itemCount: 0 };
           }
         })
@@ -103,7 +103,7 @@ const SelfStudyScreen: React.FC = () => {
 
       setRecentPublicLists(listsWithCounts);
     } catch (error) {
-      console.error("Failed to load document lists:", error);
+      console.log("Failed to load document lists:", error);
     } finally {
       setLoadingRecent(false);
     }
@@ -199,7 +199,7 @@ const SelfStudyScreen: React.FC = () => {
       {/* BODY */}
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
         <View style={styles.section}>
-         
+
 
           {loadingRecent && (
             <Text style={{ paddingHorizontal: 20, color: "#777" }}>Loading...</Text>

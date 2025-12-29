@@ -72,7 +72,7 @@ const CreateClassScreen: React.FC = () => {
       Alert.alert("OK", "Đã tạo lớp học!");
       navigation.replace("ClassDetail", { classId, mode: "OWNER" });
     } catch (e: any) {
-      console.error(e);
+      console.log(e);
       Alert.alert("Lỗi", e?.response?.data?.message ?? "Tạo lớp thất bại.");
     } finally {
       setSubmitting(false);

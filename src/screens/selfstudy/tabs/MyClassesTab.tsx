@@ -40,7 +40,7 @@ const MyClassesTab: React.FC<{ userId: number }> = ({ userId }) => {
       const onlyMine = arr.filter((c) => Number(c.userId) === Number(userId));
       setMyClasses(onlyMine);
     } catch (e) {
-      console.error(e);
+      console.log(e);
       Alert.alert("Lỗi", "Không tải được danh sách lớp của bạn.");
     } finally {
       setLoading(false);
@@ -71,7 +71,7 @@ const MyClassesTab: React.FC<{ userId: number }> = ({ userId }) => {
                 await Promise.all(
                   memArr.map((m: any) => (m?.classUserId ? classUserService.delete(m.classUserId) : Promise.resolve()))
                 );
-              } catch {}
+              } catch { }
 
               try {
                 const maps = await classDocumentListService.getByClassId(c.classId);
@@ -81,14 +81,14 @@ const MyClassesTab: React.FC<{ userId: number }> = ({ userId }) => {
                     m?.classDocumentListId ? classDocumentListService.delete(m.classDocumentListId) : Promise.resolve()
                   )
                 );
-              } catch {}
+              } catch { }
 
               await classService.delete(c.classId);
 
               Alert.alert("OK", "Đã xoá lớp.");
               await load();
             } catch (e) {
-              console.error(e);
+              console.log(e);
               Alert.alert("Lỗi", "Xoá lớp thất bại. Kiểm tra BE/permission.");
             } finally {
               setLoading(false);

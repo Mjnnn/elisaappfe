@@ -2,7 +2,8 @@ export interface EnglishVocabularyTheoryResponse {
     vocabId: number;
     word: string;
     meaning: string;
-    type: string;        // Loại từ (N, V, Adj, etc.)
+    type: string;   
+    ipa: string | null;     // Loại từ (N, V, Adj, etc.)
     example: string | null;     // Câu ví dụ minh họa
     image: string | null; // URL hoặc đường dẫn hình ảnh (có thể là null)
     // Thêm các thuộc tính khác nếu cần
