@@ -136,8 +136,14 @@ const ChatbotScreen = () => {
                 headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'multipart/form-data' },
                 body: formData
             });
+            if (!response.ok) {
+                Alert.alert("Lỗi", "Hiện tại chức năng này đang gặp sự cố và đang bảo trì. Vui lòng thử lại sau.");
+                setIsTranscribing(false);
+                return;
+            }
             const data = await response.json();
             if (data.text) await handleSendText(data.text);
+            else { Alert.alert("Lỗi", "Không nhận diện được giọng nói. Vui lòng thử lại."); }
         } catch (error) { console.log(error); } finally { setIsTranscribing(false); }
     };
 
@@ -292,7 +298,12 @@ const ChatbotScreen = () => {
                                 <View style={{ alignItems: 'center', marginVertical: 4 }}>
                                     <Ionicons name="arrow-down" size={16} color="#94A3B8" />
                                 </View>
-                                <Text style={styles.textNew}>{editedSentence}</Text>
+                                <Text style={editedSentence === "Server update in progress. Please try again later."
+                                    ? styles.textError
+                                    : styles.textNew}
+                                >
+                                    {editedSentence}
+                                </Text>
                             </View>
                         ) : (
                             <Text style={[styles.textNew, { color: THEME.scoreHigh, textAlign: 'center' }]}>Perfect Sentence!</Text>
@@ -453,6 +464,7 @@ const styles = StyleSheet.create({
     divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 8 },
     textOld: { fontSize: 15, color: '#EF4444', textDecorationLine: 'line-through', opacity: 0.7 },
     textNew: { fontSize: 16, color: '#10B981', fontWeight: '600' },
+    textError: { fontSize: 16, color: '#EF4444', fontWeight: '600' },
     hintBox: { marginTop: 10, flexDirection: 'row', backgroundColor: '#FFFBEB', padding: 8, borderRadius: 6 },
     hintText: { flex: 1, fontSize: 13, color: '#D97706', marginLeft: 6, fontStyle: 'italic' },
     bubbleUserShadow: { shadowColor: '#FBCFE8' },

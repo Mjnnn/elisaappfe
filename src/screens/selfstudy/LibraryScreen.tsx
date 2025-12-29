@@ -72,7 +72,7 @@ const LibraryScreen: React.FC = () => {
         }
         setUserId(parsed);
       } catch (e) {
-        console.error("Load userId error:", e);
+        console.log("Load userId error:", e);
         Alert.alert("Lỗi", "Không đọc được session đăng nhập.");
       }
     };
@@ -119,7 +119,7 @@ const LibraryScreen: React.FC = () => {
       if ((tab ?? activeTab) === "DOCS") await loadMyLists(userId);
       else await loadFavorites(userId);
     } catch (e) {
-      console.error("Load library error:", e);
+      console.log("Load library error:", e);
       Alert.alert("Lỗi", "Không tải được dữ liệu Library.");
     } finally {
       setLoading(false);
@@ -153,7 +153,7 @@ const LibraryScreen: React.FC = () => {
         itemCount: count,
       });
     } catch (err) {
-      console.error("Open detail error:", err);
+      console.log("Open detail error:", err);
       Alert.alert("Lỗi", "Không mở được chi tiết tài liệu.");
     } finally {
       setLoading(false);
@@ -167,7 +167,7 @@ const LibraryScreen: React.FC = () => {
       await documentListService.toggleVisibility(listId);
       await reload();
     } catch (err) {
-      console.error("toggleVisibility error:", err);
+      console.log("toggleVisibility error:", err);
       Alert.alert("Lỗi", "Không đổi được trạng thái công khai.");
     }
   };
@@ -196,7 +196,7 @@ const LibraryScreen: React.FC = () => {
               await documentListService.deleteDocumentList(listId);
               await reload("DOCS");
             } catch (err) {
-              console.error("delete list error:", err);
+              console.log("delete list error:", err);
               Alert.alert("Lỗi", "Xoá thất bại.");
             } finally {
               setLoading(false);

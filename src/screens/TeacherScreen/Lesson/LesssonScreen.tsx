@@ -22,11 +22,14 @@ const LessonScreen: React.FC = () => {
     const searchInputRef = useRef<TextInput>(null);
     const learningPathRef = useRef<LearningPathHandle>(null);
     const navigation = useNavigation<any>();
+    const [role, setRole] = useState<string | null>(null);
 
     useEffect(() => {
         const loadUser = async () => {
             const storedName = await AsyncStorage.getItem('fullName');
             if (storedName) setName(storedName);
+            const storedRole = await AsyncStorage.getItem("role");
+            if (storedRole) setRole(storedRole);
         };
         loadUser();
     }, []);
@@ -69,9 +72,15 @@ const LessonScreen: React.FC = () => {
                         <Text style={homeStyles.welcomeText}>Xin chào,</Text>
                         <Text style={homeStyles.username}>{name || 'Học viên'}</Text>
                     </View>
-                    <TouchableOpacity onPress={() => navigation.navigate('SelfStudyScreen')}>
-                        <Ionicons name="book-outline" size={30} color="#111827" />
-                    </TouchableOpacity>
+                    {role?.toLowerCase() === 'user' ? (
+                        <TouchableOpacity onPress={() => navigation.navigate('SelfStudyScreen')}>
+                            <Ionicons name="book-outline" size={30} color="#111827" />
+                        </TouchableOpacity>
+                    ) : role?.toLowerCase() === 'teacher' ? (
+                        <TouchableOpacity onPress={() => navigation.navigate('AccountTeacherScreen')}>
+                            <Ionicons name="person-circle-outline" size={35} color="#111827" />
+                        </TouchableOpacity>
+                    ) : null}
                 </View>
 
                 {/* SEARCH BAR */}

@@ -159,7 +159,7 @@ const ClassDetailScreen: React.FC = () => {
         setMyDocLists(myArr);
       }
     } catch (e) {
-      console.error(e);
+      console.log(e);
       Alert.alert("Lỗi", "Không tải được dữ liệu lớp học.");
       navigation.goBack();
     } finally {
@@ -194,7 +194,7 @@ const ClassDetailScreen: React.FC = () => {
       Alert.alert("OK", "Đã lưu thông tin lớp.");
       await loadAll();
     } catch (e) {
-      console.error(e);
+      console.log(e);
       Alert.alert("Lỗi", "Lưu thông tin lớp thất bại.");
     } finally {
       setLoading(false);
@@ -237,7 +237,7 @@ const ClassDetailScreen: React.FC = () => {
       setAddEmail("");
       await loadAll();
     } catch (e: any) {
-      console.error(e);
+      console.log(e);
       Alert.alert(
         "Lỗi",
         e?.response?.data?.message ?? "Thêm thành viên thất bại (email không tồn tại hoặc lỗi hệ thống)."
@@ -262,7 +262,7 @@ const ClassDetailScreen: React.FC = () => {
             Alert.alert("OK", "Đã xoá thành viên.");
             await loadAll();
           } catch (e) {
-            console.error(e);
+            console.log(e);
             Alert.alert("Lỗi", "Xoá thành viên thất bại.");
           } finally {
             setLoading(false);
@@ -290,7 +290,7 @@ const ClassDetailScreen: React.FC = () => {
       setPickedListId(null);
       await loadAll();
     } catch (e: any) {
-      console.error(e);
+      console.log(e);
       Alert.alert("Lỗi", e?.response?.data?.message ?? "Thêm tài liệu thất bại.");
     } finally {
       setLoading(false);
@@ -312,7 +312,7 @@ const ClassDetailScreen: React.FC = () => {
             Alert.alert("OK", "Đã xoá tài liệu khỏi lớp.");
             await loadAll();
           } catch (e) {
-            console.error(e);
+            console.log(e);
             Alert.alert("Lỗi", "Xoá tài liệu thất bại.");
           } finally {
             setLoading(false);
@@ -348,7 +348,7 @@ const ClassDetailScreen: React.FC = () => {
             Alert.alert("OK", "Đã rời lớp.");
             navigation.goBack();
           } catch (e) {
-            console.error(e);
+            console.log(e);
             Alert.alert("Lỗi", "Rời lớp thất bại.");
           } finally {
             setLoading(false);
@@ -375,20 +375,20 @@ const ClassDetailScreen: React.FC = () => {
               await Promise.all(
                 members.map((m) => (m?.classUserId ? classUserService.delete(m.classUserId) : Promise.resolve()))
               );
-            } catch {}
+            } catch { }
             try {
               await Promise.all(
                 lists.map((x) =>
                   x?.classDocumentListId ? classDocumentListService.delete(x.classDocumentListId) : Promise.resolve()
                 )
               );
-            } catch {}
+            } catch { }
 
             await classService.delete(classId);
             Alert.alert("OK", "Đã xoá lớp.");
             navigation.goBack();
           } catch (e) {
-            console.error(e);
+            console.log(e);
             Alert.alert("Lỗi", "Xoá lớp thất bại.");
           } finally {
             setLoading(false);

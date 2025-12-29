@@ -15,24 +15,18 @@ import {
     UIManager,
     KeyboardAvoidingView,
     ScrollView,
-    StatusBar // ✨ Import thêm StatusBar để chỉnh màu chữ trên thanh trạng thái
+    StatusBar
 } from 'react-native';
 import { RouteProp, useNavigation, useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
-import { AppTabsParamLessonList } from '../../../navigation/AppTabLesson';
-import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
-
-// --- Import Service và Interface ---
 import { EnglishVocabularyTheoryResponse } from '../../../types/response/VocabularyResponse';
 import vocabularyService from '../../../services/vocabularyService';
-import { AuthStackParamList } from '../../../navigation/AuthStack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-// Kích hoạt LayoutAnimation cho Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
     UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-// Định nghĩa màu sắc chủ đạo (Theme)
 const COLORS = {
     primary: '#6C63FF',
     secondary: '#FF6584',
@@ -48,16 +42,12 @@ const COLORS = {
 
 const VOCAB_TYPES = ['Noun', 'Verb', 'Adjective', 'Adverb', 'Preposition', 'Interjection'];
 
-type VocabularyRouteProp = RouteProp<AppTabsParamLessonList, 'Vocabulary'>;
-// type Props = NativeStackScreenProps<AuthStackParamList, 'VocabularyOfLessonScreen'>;
 type VocabularyScreenRouteProp = RouteProp<
     { VocabularyParams: { lessonId: number; lessonTitle: string } },
     'VocabularyParams'
 >;
 
-
 const VocabularyOfLessonScreen = () => {
-    // --- State Quản lý Dữ liệu ---
     const [vocabList, setVocabList] = useState<EnglishVocabularyTheoryResponse[]>([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(0);
@@ -67,30 +57,28 @@ const VocabularyOfLessonScreen = () => {
     const navigation = useNavigation<NativeStackNavigationProp<any>>();
     const { lessonId, lessonTitle } = route.params;
 
-    // --- State Quản lý Form (Thêm & Sửa) ---
     const [modalVisible, setModalVisible] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [selectedId, setSelectedId] = useState<number | null>(null);
-
-    // ✨ State loading khi đang Submit Form
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isFetchingIPA, setIsFetchingIPA] = useState(false);
 
     const [formWord, setFormWord] = useState({
         word: '',
         meaning: '',
+        ipa: '',
         example: '',
         type: 'Noun',
         image: null as string | null,
     });
 
-    // ✨ State quản lý lỗi validation
     const [errors, setErrors] = useState({
         word: '',
         meaning: '',
+        ipa: '',
         example: ''
     });
 
-    // --- Logic API: Lấy danh sách ---
     const fetchVocabulary = useCallback(async (pageNum: number, isRefresh = false) => {
         if (loading) return;
         setLoading(true);
@@ -121,14 +109,31 @@ const VocabularyOfLessonScreen = () => {
         fetchVocabulary(0, true);
     }, []);
 
-    // --- Logic Helper ---
+    // ✨ LOGIC CẬP NHẬT: Cho phép chạy cả khi đang Edit
+    const fetchIPAAuto = async (word: string) => {
+        if (!word.trim()) return;
+
+        setIsFetchingIPA(true);
+        try {
+            const response = await vocabularyService.getIPAVocabulary(word.trim());
+            if (response.data && response.data.ipa) {
+                setFormWord(prev => ({ ...prev, ipa: response.data.ipa }));
+                setErrors(prev => ({ ...prev, ipa: '' }));
+            }
+        } catch (error) {
+            console.log("Lỗi lấy IPA tự động:", error);
+        } finally {
+            setIsFetchingIPA(false);
+        }
+    };
 
     const resetForm = () => {
-        setFormWord({ word: '', meaning: '', example: '', type: 'Noun', image: null });
-        setErrors({ word: '', meaning: '', example: '' });
+        setFormWord({ word: '', meaning: '', ipa: '', example: '', type: 'Noun', image: null });
+        setErrors({ word: '', meaning: '', ipa: '', example: '' });
         setIsEditing(false);
         setSelectedId(null);
         setIsSubmitting(false);
+        setIsFetchingIPA(false);
     };
 
     const openAddModal = () => {
@@ -143,29 +148,34 @@ const VocabularyOfLessonScreen = () => {
         setFormWord({
             word: item.word,
             meaning: item.meaning,
+            ipa: item.ipa || '',
             example: item.example || '',
             type: item.type,
             image: item.image || null
         });
-        setErrors({ word: '', meaning: '', example: '' });
+        setErrors({ word: '', meaning: '', ipa: '', example: '' });
         setModalVisible(true);
     };
 
-    const handleBlur = (field: 'word' | 'meaning' | 'example', value: string) => {
+    const handleBlur = (field: 'word' | 'meaning' | 'example' | 'ipa', value: string) => {
         if (!value.trim()) {
             setErrors(prev => ({ ...prev, [field]: 'Trường này không được để trống' }));
         } else {
             setErrors(prev => ({ ...prev, [field]: '' }));
         }
+
+        if (field === 'word' && value.trim()) {
+            fetchIPAAuto(value); // Sẽ tự cập nhật IPA dù là Add hay Edit
+        }
     };
 
-    // --- 💾 XỬ LÝ LƯU (CREATE & UPDATE) ---
     const handleSave = async () => {
         const wordError = !formWord.word.trim() ? 'Trường này không được để trống' : '';
         const meaningError = !formWord.meaning.trim() ? 'Trường này không được để trống' : '';
+        const ipaError = !formWord.ipa.trim() ? 'Trường này không được để trống' : '';
 
-        if (wordError || meaningError) {
-            setErrors({ ...errors, word: wordError, meaning: meaningError });
+        if (wordError || meaningError || ipaError) {
+            setErrors({ ...errors, word: wordError, meaning: meaningError, ipa: ipaError });
             Alert.alert("Thiếu thông tin", "Vui lòng kiểm tra lại các trường báo lỗi.");
             return;
         }
@@ -176,6 +186,7 @@ const VocabularyOfLessonScreen = () => {
             const formData = new FormData();
             formData.append('word', formWord.word);
             formData.append('meaning', formWord.meaning);
+            formData.append('ipa', formWord.ipa);
             formData.append('type', formWord.type);
             formData.append('example', formWord.example);
 
@@ -189,7 +200,6 @@ const VocabularyOfLessonScreen = () => {
             }
 
             if (isEditing && selectedId !== null) {
-                // Update
                 const response = await vocabularyService.updateVocabulary(selectedId, formData);
                 const updatedItem = response.data;
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
@@ -200,7 +210,6 @@ const VocabularyOfLessonScreen = () => {
                 setVocabList(updatedList);
                 Alert.alert("Cập nhật", "Đã sửa từ vựng thành công!");
             } else {
-                // Create
                 const response = await vocabularyService.createVocabularyByLesson(lessonId, formData);
                 const newItem = response.data;
                 LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
@@ -217,7 +226,6 @@ const VocabularyOfLessonScreen = () => {
         }
     };
 
-    // --- 🗑️ XỬ LÝ XOÁ ---
     const handleDelete = () => {
         Alert.alert(
             "Xác nhận xoá",
@@ -231,20 +239,15 @@ const VocabularyOfLessonScreen = () => {
                         if (selectedId !== null) {
                             setIsSubmitting(true);
                             try {
-                                console.log(`Deleting vocabulary ID: ${selectedId}...`);
                                 await vocabularyService.deleteVocabulary(selectedId);
-
                                 LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                                 const newList = vocabList.filter(item => item.vocabId !== selectedId);
                                 setVocabList(newList);
-
                                 setModalVisible(false);
                                 resetForm();
                                 Alert.alert("Thành công", "Đã xoá từ vựng khỏi danh sách.");
-
                             } catch (error) {
-                                console.log("Lỗi xoá từ vựng:", error);
-                                Alert.alert("Thất bại", "Đã có lỗi xảy ra khi xoá. Vui lòng thử lại.");
+                                Alert.alert("Thất bại", "Đã có lỗi xảy ra khi xoá.");
                             } finally {
                                 setIsSubmitting(false);
                             }
@@ -255,7 +258,6 @@ const VocabularyOfLessonScreen = () => {
         );
     };
 
-    // --- XỬ LÝ ẢNH ---
     const pickImageFromLibrary = async () => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -296,7 +298,6 @@ const VocabularyOfLessonScreen = () => {
         ]);
     };
 
-    // --- Render Components ---
     const renderItem = ({ item }: { item: EnglishVocabularyTheoryResponse }) => {
         const parts = item.example ? item.example.split(" -> ") : [];
         const englishPhrase = parts[0];
@@ -313,6 +314,7 @@ const VocabularyOfLessonScreen = () => {
                                     <Text style={styles.typeText}>{item.type}</Text>
                                 </View>
                             </View>
+                            {item.ipa ? <Text style={styles.ipaTextCard}>/{item.ipa}/</Text> : null}
                             <Text style={styles.meaningText}>{item.meaning}</Text>
                             {item.example ? (
                                 <View style={styles.exampleBox}>
@@ -351,7 +353,6 @@ const VocabularyOfLessonScreen = () => {
 
     return (
         <View style={styles.container}>
-            {/* ✨ Thêm StatusBar để đảm bảo icon (pin, giờ) màu đen trên nền trắng */}
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
             <View style={styles.header}>
@@ -376,7 +377,6 @@ const VocabularyOfLessonScreen = () => {
                 </TouchableOpacity>
             )}
 
-            {/* --- MODAL --- */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -417,6 +417,23 @@ const VocabularyOfLessonScreen = () => {
                                 onChangeText={(t) => { setFormWord({ ...formWord, meaning: t }); if (t.trim()) setErrors({ ...errors, meaning: '' }); }}
                             />
                             {errors.meaning ? <Text style={styles.errorText}>{errors.meaning}</Text> : null}
+
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <Text style={styles.label}>Phiên âm (IPA) <Text style={{ color: COLORS.danger }}>*</Text></Text>
+                                {isFetchingIPA && <ActivityIndicator size="small" color={COLORS.secondary} style={{ marginLeft: 10, marginBottom: 8 }} />}
+                            </View>
+                            <TextInput
+                                style={[styles.input, errors.ipa ? styles.inputError : null]}
+                                placeholder={isFetchingIPA ? "Đang lấy phiên âm từ AI..." : "e.g. /ˈɡæləksi/"}
+                                value={formWord.ipa}
+                                editable={!isSubmitting}
+                                onBlur={() => handleBlur('ipa', formWord.ipa)}
+                                onChangeText={(t) => {
+                                    setFormWord({ ...formWord, ipa: t });
+                                    if (t.trim()) setErrors({ ...errors, ipa: '' });
+                                }}
+                            />
+                            {errors.ipa ? <Text style={styles.errorText}>{errors.ipa}</Text> : null}
 
                             <Text style={styles.label}>Loại từ</Text>
                             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.typeContainer}>
@@ -484,17 +501,12 @@ const VocabularyOfLessonScreen = () => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.background },
     header: {
-        // 🔥 Đã sửa ở đây: Dùng paddingTop thay vì marginTop
         paddingTop: Platform.OS === 'android' ? 40 : 60,
         paddingHorizontal: 20,
         paddingBottom: 15,
         backgroundColor: '#3B82F6',
         borderBottomLeftRadius: 30,
         borderBottomRightRadius: 30,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 10,
         elevation: 3
     },
     headerTitle: { fontSize: 24, fontWeight: 'bold', color: 'white', letterSpacing: 0.5 },
@@ -504,8 +516,9 @@ const styles = StyleSheet.create({
     card: { backgroundColor: COLORS.cardBg, borderRadius: 20, padding: 18, shadowColor: '#6C63FF', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 12, elevation: 6, borderWidth: 1, borderColor: '#F0F0F0' },
     cardContent: { flexDirection: 'row', justifyContent: 'space-between' },
     textContainer: { flex: 1, marginRight: 12 },
-    wordRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+    wordRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
     wordText: { fontSize: 20, fontWeight: '800', color: COLORS.textMain, marginRight: 10 },
+    ipaTextCard: { fontSize: 14, color: COLORS.secondary, marginBottom: 6, fontWeight: '500' },
     typeBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
     typeText: { fontSize: 12, fontWeight: 'bold', color: COLORS.textMain },
     meaningText: { fontSize: 17, color: '#444', marginBottom: 8, fontWeight: '500' },

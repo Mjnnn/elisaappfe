@@ -43,7 +43,7 @@ const JoinedClassesTab: React.FC<{ userId: number }> = ({ userId }) => {
       // loại những record có thể là owner nếu BE trả ở đây — giữ nguyên cũng ok
       setJoined(arr);
     } catch (e) {
-      console.error(e);
+      console.log(e);
       Alert.alert("Lỗi", "Không tải được lớp tham gia.");
     } finally {
       setLoading(false);
@@ -73,7 +73,7 @@ const JoinedClassesTab: React.FC<{ userId: number }> = ({ userId }) => {
       setJoinPassword("");
       await load();
     } catch (e: any) {
-      console.error(e);
+      console.log(e);
       Alert.alert("Lỗi", e?.response?.data?.message ?? "Tham gia lớp thất bại (sai password hoặc không tồn tại).");
     } finally {
       setLoading(false);
@@ -93,7 +93,7 @@ const JoinedClassesTab: React.FC<{ userId: number }> = ({ userId }) => {
             Alert.alert("OK", "Đã rời lớp.");
             await load();
           } catch (e) {
-            console.error(e);
+            console.log(e);
             Alert.alert("Lỗi", "Rời lớp thất bại.");
           } finally {
             setLoading(false);

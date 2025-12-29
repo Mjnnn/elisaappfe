@@ -73,7 +73,7 @@ const DocumentListDetailScreen: React.FC = () => {
         const parsed = Number(stored);
         setUserId(Number.isNaN(parsed) ? null : parsed);
       } catch (e) {
-        console.error("Load userId error:", e);
+        console.log("Load userId error:", e);
         setUserId(null);
       }
     };
@@ -89,7 +89,7 @@ const DocumentListDetailScreen: React.FC = () => {
         const res = await documentItemService.getByListId(listId);
         setItems(res.data ?? []);
       } catch (error) {
-        console.error("Failed to load items:", error);
+        console.log("Failed to load items:", error);
       } finally {
         setLoading(false);
       }
@@ -110,7 +110,7 @@ const DocumentListDetailScreen: React.FC = () => {
           setIsFavorite(false);
           setFavoriteId(null);
         } else {
-          console.error("Check favorite failed:", error);
+          console.log("Check favorite failed:", error);
         }
       }
     };
@@ -214,7 +214,7 @@ const DocumentListDetailScreen: React.FC = () => {
         setFavoriteId(null);
       }
     } catch (error) {
-      console.error("Toggle favorite failed:", error);
+      console.log("Toggle favorite failed:", error);
       Alert.alert("Lỗi", "Không thể cập nhật yêu thích. Vui lòng thử lại.");
     } finally {
       setFavoriteLoading(false);

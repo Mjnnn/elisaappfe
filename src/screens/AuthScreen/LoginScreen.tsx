@@ -61,6 +61,7 @@ const LoginScreen: React.FC = () => {
       await AsyncStorage.setItem("userId", String(data.userId));
       await AsyncStorage.setItem("email", data.email);
       await AsyncStorage.setItem("fullName", data.fullName);
+      await AsyncStorage.setItem("role", data.role);
 
       Toast.show({
         type: 'success', // 👈 Loại thông báo có icon thành công

@@ -47,6 +47,7 @@ import EarTrainingScreen from "../screens/TeacherScreen/EarTraining/EarTrainingS
 import CommonLevelScreen from "../screens/TeacherScreen/EarTraining/CommonLevelScreen";
 import LoadingForChallenge from "../screens/TeacherScreen/loading/LoadingForChallenge";
 import AppTabChallenge from "./AppTabChallenge";
+import AccountTeacheScreen from "../screens/TeacherScreen/AccountTeacherScreen/AccountTeacherScreen";
 
 // ==== Tự học (Self Study) ====
 import DocumentListDetailScreen from "../screens/selfstudy/DocumentListDetailScreen";
@@ -240,6 +241,7 @@ export type AuthStackParamList = {
   CommonLevelScreen: { levelId: string };
   LearnByLevelScreen: { levelId: string };
   VideoLearningScreen: { videoId: number };
+  AccountTeacherScreen: undefined;
 
   StartConversation: { topicId: number; levelCode: string };
   ChatbotScreen: { topic: string; levelCode: string };
@@ -314,6 +316,7 @@ const AuthStack: React.FC = () => {
       <Stack.Screen name="AppTabChallenge" component={AppTabChallenge} />
       <Stack.Screen name="StartConversation" component={StartConversationScreen} />
       <Stack.Screen name="ChatbotScreen" component={ChatbotScreen} />
+      <Stack.Screen name="AccountTeacherScreen" component={AccountTeacheScreen} />
     </Stack.Navigator>
   );
 };

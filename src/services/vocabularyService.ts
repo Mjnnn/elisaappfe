@@ -1,6 +1,8 @@
 import apiService from "./apiService";
 import { AxiosResponse } from "axios";
 import { VocabularyPageResponse } from "../types/response/VocabularyResponse";
+import {EnglishPronunciationScoreResponse} from "../types/response/EnglishPronunciationScoreResponse";
+
 
 const BASE_URL = "/english-vocabulary-theories";
 
@@ -17,6 +19,9 @@ const vocabularyService = {
       },
     }),
 
+    getIPAVocabulary: (vocab: String) =>
+      apiService.get(`${BASE_URL}/ipa/${vocab}`),
+
   updateVocabulary: (vocabId: number, data: FormData) =>
     apiService.put(`${BASE_URL}/update/${vocabId}`, data, {
       headers: {
@@ -26,6 +31,13 @@ const vocabularyService = {
 
   deleteVocabulary: (vocabId: number) =>
     apiService.delete(`${BASE_URL}/delete/${vocabId}`),
+
+  getPronunciationScore: (data: FormData): Promise<AxiosResponse<EnglishPronunciationScoreResponse>> =>
+      apiService.post(`${BASE_URL}/pronunciation-score`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
 };
 
 export default vocabularyService;

@@ -201,7 +201,7 @@ const LearningPath = forwardRef<LearningPathHandle, {}>((props, ref) => {
                     setSectionTitle(sectionColors[String(response.data.section)].title);
                 }
             } catch (error) {
-                console.error("Lỗi lấy tiến độ:", error);
+                console.log("Lỗi lấy tiến độ:", error);
             } finally {
                 setIsLoading(false);
             }
@@ -251,7 +251,7 @@ const LearningPath = forwardRef<LearningPathHandle, {}>((props, ref) => {
                         await userProgressService.updateUserProgress({ userId, lessonId: nextLessonId, section: 1 });
                         if (userProgress) setUserProgress({ ...userProgress, lessonId: nextLessonId });
                     }
-                } catch (e) { console.error(e); }
+                } catch (e) { console.log(e); }
             } else { Alert.alert("Đã nhận", "Bạn đã mở chiếc rương này rồi!"); }
         } else if (node.type === 'challenge') {
             navigation.navigate('ChallengeLoading', { lessonId: node.id, lessonTitle: node.title, section: 1, targetRoute: 'MultipleChoiceScreen' });
