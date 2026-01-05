@@ -1,6 +1,6 @@
 // src/screens/selfstudy/DocumentListDetailScreen.tsx
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,11 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   Alert,
+  Modal,
+  TextInput,
+  Pressable,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,6 +27,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import documentItemService from "../../services/documentItemService";
 import favoriteDocumentListService from "../../services/favoriteDocumentListService";
+import documentReportService from "../../services/documentReportService"; // ✅ bạn cần tạo service này như mình đã viết
 import StudyModeList, { StudyMode } from "../../components/StudyModeList";
 import { AuthStackParamList } from "../../navigation/AuthStack";
 
@@ -44,6 +50,13 @@ interface DocumentItem {
   vocabImage?: string;
 }
 
+type ReportReasonType = "EMPTY" | "INVALID" | "CUSTOM";
+
+const REPORT_REASON_TEXT: Record<Exclude<ReportReasonType, "CUSTOM">, string> = {
+  EMPTY: "Nội dung rỗng",
+  INVALID: "Nội dung không hợp lệ",
+};
+
 const DocumentListDetailScreen: React.FC = () => {
   const navigation = useNavigation<DetailNavProp>();
   const route = useRoute<DetailRouteProp>();
@@ -60,6 +73,28 @@ const DocumentListDetailScreen: React.FC = () => {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [favoriteId, setFavoriteId] = useState<number | null>(null);
   const [favoriteLoading, setFavoriteLoading] = useState<boolean>(false);
+
+  // ✅ report state
+  const [isReported, setIsReported] = useState<boolean>(false);
+  const [reportId, setReportId] = useState<number | null>(null);
+  const [reportLoading, setReportLoading] = useState<boolean>(false);
+
+  // ✅ modal report
+  const [reportModalVisible, setReportModalVisible] =
+    useState<boolean>(false);
+  const [selectedReasonType, setSelectedReasonType] =
+    useState<ReportReasonType>("EMPTY");
+  const [customReason, setCustomReason] = useState<string>("");
+
+  const resolvedReasonText = useMemo(() => {
+    if (selectedReasonType === "CUSTOM") return customReason?.trim() ?? "";
+    return REPORT_REASON_TEXT[selectedReasonType];
+  }, [selectedReasonType, customReason]);
+
+  const requireLogin = () => {
+    Alert.alert("Thông báo", "Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
+    navigation.navigate("Login" as never);
+  };
 
   // ✅ Load userId (đã lưu lúc login)
   useEffect(() => {
@@ -81,7 +116,7 @@ const DocumentListDetailScreen: React.FC = () => {
     loadUserId();
   }, []);
 
-  // Load items + check favorite (khi đã có userId)
+  // Load items + check favorite + check report (khi đã có userId)
   useEffect(() => {
     const fetchItems = async () => {
       try {
@@ -98,14 +133,10 @@ const DocumentListDetailScreen: React.FC = () => {
     const fetchFavorite = async (uid: number) => {
       try {
         const res = await favoriteDocumentListService.checkFavorite(uid, listId);
-
-        // ✅ nếu BE trả object favorite
-        // ví dụ { favoriteId: 123, userId:..., listId:... }
         setIsFavorite(true);
         const favId = res?.data?.favoriteId ?? res?.data?.id;
         setFavoriteId(typeof favId === "number" ? favId : null);
       } catch (error: any) {
-        // 404 = chưa favorite
         if (error?.response?.status === 404) {
           setIsFavorite(false);
           setFavoriteId(null);
@@ -115,15 +146,43 @@ const DocumentListDetailScreen: React.FC = () => {
       }
     };
 
+    // ✅ check report: BE của bạn không có endpoint "check" riêng,
+    // nên mình lấy tất cả report theo userId rồi tìm report có listId
+    const fetchReport = async (uid: number) => {
+      try {
+        const res = await documentReportService.getReportsByUserId(uid);
+        const arr = (res?.data ?? []) as any[];
+
+        const found = arr.find((r) => Number(r?.listId) === Number(listId));
+        if (found) {
+          setIsReported(true);
+          const rid = found?.reportId ?? found?.id;
+          setReportId(typeof rid === "number" ? rid : null);
+
+          // nếu muốn hiển thị reason cũ, có thể set lại:
+          // setSelectedReasonType("CUSTOM");
+          // setCustomReason(found?.reason ?? "");
+        } else {
+          setIsReported(false);
+          setReportId(null);
+        }
+      } catch (error) {
+        console.error("Check report failed:", error);
+        setIsReported(false);
+        setReportId(null);
+      }
+    };
+
     fetchItems();
 
-    // ✅ chỉ check favorite khi có userId
     if (typeof userId === "number") {
       fetchFavorite(userId);
+      fetchReport(userId);
     } else {
-      // chưa login / chưa lấy được userId -> coi như chưa favorite
       setIsFavorite(false);
       setFavoriteId(null);
+      setIsReported(false);
+      setReportId(null);
     }
   }, [listId, userId]);
 
@@ -172,8 +231,7 @@ const DocumentListDetailScreen: React.FC = () => {
     if (favoriteLoading) return;
 
     if (typeof userId !== "number") {
-      Alert.alert("Thông báo", "Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
-      navigation.navigate("Login" as never);
+      requireLogin();
       return;
     }
 
@@ -181,7 +239,6 @@ const DocumentListDetailScreen: React.FC = () => {
       setFavoriteLoading(true);
 
       if (!isFavorite) {
-        // ✅ tạo favorite: DTO = { userId, listId }
         const res = await favoriteDocumentListService.create({
           userId,
           listId,
@@ -191,11 +248,9 @@ const DocumentListDetailScreen: React.FC = () => {
         const favId = res?.data?.favoriteId ?? res?.data?.id;
         setFavoriteId(typeof favId === "number" ? favId : null);
       } else {
-        // ✅ đã favorite -> xoá theo favoriteId
         if (favoriteId != null) {
           await favoriteDocumentListService.delete(favoriteId);
         } else {
-          // fallback: nếu không có favoriteId (BE không trả), check lại rồi xoá
           try {
             const check = await favoriteDocumentListService.checkFavorite(
               userId,
@@ -219,6 +274,149 @@ const DocumentListDetailScreen: React.FC = () => {
     } finally {
       setFavoriteLoading(false);
     }
+  };
+
+  // ✅ mở modal báo cáo
+  const openReportModal = () => {
+    if (typeof userId !== "number") {
+      requireLogin();
+      return;
+    }
+
+    // nếu đã report -> bấm lại để xoá report (toggle)
+    if (isReported) {
+      Alert.alert(
+        "Xoá báo cáo?",
+        "Bạn đã báo cáo tài liệu này. Bạn muốn xoá báo cáo không?",
+        [
+          { text: "Huỷ", style: "cancel" },
+          {
+            text: "Xoá",
+            style: "destructive",
+            onPress: () => deleteReport(),
+          },
+        ]
+      );
+      return;
+    }
+
+    // reset form
+    setSelectedReasonType("EMPTY");
+    setCustomReason("");
+    setReportModalVisible(true);
+  };
+
+  const closeReportModal = () => {
+    setReportModalVisible(false);
+  };
+
+  const submitReport = async () => {
+    if (reportLoading) return;
+
+    if (typeof userId !== "number") {
+      requireLogin();
+      return;
+    }
+
+    const reason = resolvedReasonText;
+    if (!reason || reason.length === 0) {
+      Alert.alert("Thiếu lý do", "Vui lòng chọn hoặc nhập lý do báo cáo.");
+      return;
+    }
+
+    if (selectedReasonType === "CUSTOM" && reason.length < 5) {
+      Alert.alert("Lý do quá ngắn", "Vui lòng nhập lý do ít nhất 5 ký tự.");
+      return;
+    }
+
+    try {
+      setReportLoading(true);
+
+      const res = await documentReportService.createReport({
+        userId,
+        listId,
+        reason,
+      });
+
+      const rid = res?.data?.reportId; // Assuming 'id' is not a valid property
+      setIsReported(true);
+      setReportId(typeof rid === "number" ? rid : null);
+
+      setReportModalVisible(false);
+      Alert.alert("Thành công", "Báo cáo của bạn đã được ghi nhận.");
+    } catch (error: any) {
+      console.error("Create report failed:", error);
+      Alert.alert(
+        "Lỗi",
+        error?.response?.data?.message ??
+          "Không thể gửi báo cáo. Vui lòng thử lại."
+      );
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const deleteReport = async () => {
+    if (reportLoading) return;
+
+    if (typeof userId !== "number") {
+      requireLogin();
+      return;
+    }
+
+    try {
+      setReportLoading(true);
+
+      if (reportId != null) {
+        await documentReportService.deleteReport(reportId);
+      } else {
+        // fallback: tìm lại reportId theo userId rồi xoá
+        const res = await documentReportService.getReportsByUserId(userId);
+        const arr = (res?.data ?? []) as any[];
+        const found = arr.find((r) => Number(r?.listId) === Number(listId));
+        const rid = found?.reportId ?? found?.id;
+        if (typeof rid === "number") {
+          await documentReportService.deleteReport(rid);
+        } else {
+          throw new Error("Không tìm thấy reportId để xoá.");
+        }
+      }
+
+      setIsReported(false);
+      setReportId(null);
+      Alert.alert("Đã xoá", "Bạn đã xoá báo cáo cho tài liệu này.");
+    } catch (error: any) {
+      console.error("Delete report failed:", error);
+      Alert.alert(
+        "Lỗi",
+        error?.response?.data?.message ??
+          "Không thể xoá báo cáo. Vui lòng thử lại."
+      );
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const ReasonRow = ({
+    type,
+    label,
+  }: {
+    type: ReportReasonType;
+    label: string;
+  }) => {
+    const checked = selectedReasonType === type;
+    return (
+      <TouchableOpacity
+        style={styles.reasonRow}
+        onPress={() => setSelectedReasonType(type)}
+        activeOpacity={0.8}
+      >
+        <View style={[styles.radio, checked && styles.radioChecked]}>
+          {checked && <View style={styles.radioDot} />}
+        </View>
+        <Text style={styles.reasonText}>{label}</Text>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -281,7 +479,7 @@ const DocumentListDetailScreen: React.FC = () => {
             )}
           </View>
 
-          {/* INFO + FAVORITE ICON */}
+          {/* INFO + ACTION ICONS */}
           <View style={styles.listInfoRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.listTitle}>{title}</Text>
@@ -301,8 +499,22 @@ const DocumentListDetailScreen: React.FC = () => {
               </View>
             </View>
 
+            {/* ✅ REPORT ICON (bên trái trái tim) */}
             <TouchableOpacity
-              style={styles.favoriteButton}
+              style={styles.iconActionBtn}
+              onPress={openReportModal}
+              disabled={reportLoading}
+            >
+              <Ionicons
+                name={isReported ? "flag" : "flag-outline"}
+                size={22}
+                color={isReported ? "#F97316" : "#9CA3AF"}
+              />
+            </TouchableOpacity>
+
+            {/* FAVORITE ICON */}
+            <TouchableOpacity
+              style={styles.iconActionBtn}
               onPress={toggleFavorite}
               disabled={favoriteLoading}
             >
@@ -364,6 +576,70 @@ const DocumentListDetailScreen: React.FC = () => {
           </Text>
         )}
       </ScrollView>
+
+      {/* ✅ REPORT MODAL */}
+      <Modal
+        visible={reportModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeReportModal}
+      >
+        <Pressable style={styles.modalOverlay} onPress={closeReportModal}>
+          <Pressable style={styles.modalCard} onPress={() => {}}>
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
+            >
+              <Text style={styles.modalTitle}>Báo cáo tài liệu</Text>
+              <Text style={styles.modalSubTitle}>
+                Chọn lý do hoặc nhập lý do của bạn.
+              </Text>
+
+              <ReasonRow type="EMPTY" label="Nội dung rỗng" />
+              <ReasonRow type="INVALID" label="Nội dung không hợp lệ" />
+              <ReasonRow type="CUSTOM" label="Lý do khác (tự nhập)" />
+
+              {selectedReasonType === "CUSTOM" && (
+                <View style={{ marginTop: 10 }}>
+                  <TextInput
+                    value={customReason}
+                    onChangeText={setCustomReason}
+                    placeholder="Nhập lý do báo cáo..."
+                    placeholderTextColor="#9CA3AF"
+                    style={styles.textArea}
+                    multiline
+                    maxLength={300}
+                  />
+                  <Text style={styles.counterText}>
+                    {customReason.length}/300
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.btn, styles.btnGhost]}
+                  onPress={closeReportModal}
+                  disabled={reportLoading}
+                >
+                  <Text style={[styles.btnText, styles.btnGhostText]}>
+                    Huỷ
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.btn, styles.btnPrimary]}
+                  onPress={submitReport}
+                  disabled={reportLoading}
+                >
+                  <Text style={styles.btnText}>
+                    {reportLoading ? "Đang gửi..." : "Gửi báo cáo"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </KeyboardAvoidingView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -386,6 +662,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#111827",
   },
+
   topCardWrapper: { paddingHorizontal: CARD_HORIZONTAL_MARGIN, marginTop: 4 },
   flashcardPreview: {
     backgroundColor: "#FFFFFF",
@@ -402,6 +679,7 @@ const styles = StyleSheet.create({
   },
   previewText: { fontSize: 18, fontWeight: "600", color: "#111827" },
   previewSubText: { marginTop: 6, fontSize: 13, color: "#6B7280" },
+
   flashcardCard: {
     paddingVertical: 30,
     paddingHorizontal: 16,
@@ -412,6 +690,7 @@ const styles = StyleSheet.create({
   },
   flashcardWord: { fontSize: 20, fontWeight: "700", color: "#111827" },
   flashcardMeaning: { marginTop: 8, fontSize: 15, color: "#374151" },
+
   dots: {
     flexDirection: "row",
     justifyContent: "center",
@@ -426,6 +705,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
   },
   dotActive: { backgroundColor: "#111827" },
+
   listInfoRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -452,7 +732,9 @@ const styles = StyleSheet.create({
   authorName: { fontSize: 13, color: "#111827" },
   dotSeparator: { marginHorizontal: 4, color: "#6B7280" },
   termCount: { fontSize: 13, color: "#6B7280" },
-  favoriteButton: { marginLeft: 12 },
+
+  iconActionBtn: { marginLeft: 12 },
+
   vocabHeaderRow: {
     marginTop: 16,
     paddingHorizontal: 16,
@@ -461,6 +743,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   vocabHeader: { fontSize: 15, fontWeight: "600", color: "#111827" },
+
   vocabItem: {
     marginTop: 8,
     marginHorizontal: 16,
@@ -474,4 +757,97 @@ const styles = StyleSheet.create({
   word: { fontSize: 15, fontWeight: "600", color: "#111827" },
   meaning: { fontSize: 13, color: "#4B5563", marginTop: 2 },
   iconButton: { marginLeft: 8 },
+
+  // ✅ modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  modalCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    padding: 16,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  modalSubTitle: {
+    marginTop: 6,
+    fontSize: 13,
+    color: "#6B7280",
+  },
+  reasonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  radio: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: "#D1D5DB",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+  radioChecked: {
+    borderColor: "#111827",
+  },
+  radioDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#111827",
+  },
+  reasonText: {
+    fontSize: 14,
+    color: "#111827",
+  },
+  textArea: {
+    minHeight: 90,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    color: "#111827",
+    textAlignVertical: "top",
+  },
+  counterText: {
+    marginTop: 6,
+    fontSize: 12,
+    color: "#9CA3AF",
+    textAlign: "right",
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 14,
+  },
+  btn: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginLeft: 10,
+  },
+  btnGhost: {
+    backgroundColor: "#F3F4F6",
+  },
+  btnPrimary: {
+    backgroundColor: "#111827",
+  },
+  btnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  btnGhostText: {
+    color: "#111827",
+  },
 });
