@@ -4,35 +4,37 @@ import { useNavigation, CommonActions } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import SelfStudyBottomBarItem from "../screens/selfstudy/SelfStudyBottomBarItem";
-import { SELF_STUDY_TABS } from "../screens/selfstudy/selfStudyBottomTabs";
+import { SELF_STUDY_TABS, SelfStudyTabName } from "../screens/selfstudy/selfStudyBottomTabs";
 
 interface SelfStudyBottomBarProps {
-  activeTab?: string;
-  onTabPress?: (tabName: string) => void;
+  activeTab?: SelfStudyTabName;
+  onTabPress?: (tabName: SelfStudyTabName) => void;
 }
 
 const SelfStudyBottomBar: React.FC<SelfStudyBottomBarProps> = ({
   activeTab = "Home",
-  onTabPress = () => { },
+  onTabPress = () => {},
 }) => {
   const navigation = useNavigation<any>();
 
-  const handlePress = (tabName: string) => {
+  const handlePress = (tabName: SelfStudyTabName) => {
     if (tabName === "Logout") {
       Alert.alert("Đăng xuất", "Bạn có chắc chắn muốn thoát?", [
         { text: "Ở lại", style: "cancel" },
         {
-          text: "Đăng xuất", style: "destructive", onPress: async () => {
+          text: "Đăng xuất",
+          style: "destructive",
+          onPress: async () => {
             await AsyncStorage.clear();
             navigation.getParent()?.dispatch(
               CommonActions.reset({
                 index: 0,
-                routes: [{ name: 'Login' }],
+                routes: [{ name: "Login" }],
               })
             );
             navigation.navigate("Login" as never);
-          }
-        }
+          },
+        },
       ]);
       return;
     }
@@ -51,14 +53,14 @@ const SelfStudyBottomBar: React.FC<SelfStudyBottomBarProps> = ({
       navigation.navigate("SelfStudyScreen" as never);
       return;
     }
+
     if (tabName === "Class") {
-      navigation.navigate("ClassScreen");
+      navigation.navigate("ClassScreen" as never);
       return;
     }
 
     onTabPress(tabName);
   };
-
 
   return (
     <View style={styles.bottomNav}>
@@ -68,7 +70,7 @@ const SelfStudyBottomBar: React.FC<SelfStudyBottomBarProps> = ({
         return (
           <SelfStudyBottomBarItem
             key={tab.name}
-            label={tab.name}
+            label={tab.label}              // ✅ hiển thị tiếng Việt ở đây
             icon={tab.icon as any}
             isActive={isActive}
             onPress={() => handlePress(tab.name)}
