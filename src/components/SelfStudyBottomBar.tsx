@@ -32,7 +32,7 @@ const SelfStudyBottomBar: React.FC<SelfStudyBottomBarProps> = ({
       return;
     }
   
-    if (tabName === "Tang chủ") {
+    if (tabName === "Home") {
       navigation.navigate("SelfStudyScreen" as never);
       return;
     }
