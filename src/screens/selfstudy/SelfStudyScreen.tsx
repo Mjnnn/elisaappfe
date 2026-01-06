@@ -1,15 +1,16 @@
 // src/screens/selfstudy/SelfStudyScreen.tsx
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   TextInput,
   Alert,
   Image,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,8 +24,8 @@ import documentListService from "../../services/documentListService";
 import documentItemService from "../../services/documentItemService";
 import { AuthStackParamList } from "../../navigation/AuthStack";
 
-// ✅ Logo giống HomeScreen của bạn
 import foxImage from "../../../assets/images/logo/Elisa.png";
+import { SelfStudyTabName } from "./selfStudyBottomTabs";
 
 interface DocumentListItem {
   listId: number;
@@ -44,25 +45,34 @@ type SelfStudyNavProp = NativeStackNavigationProp<
   "SelfStudyScreen"
 >;
 
+const PAGE_SIZE = 10;
+
+// Chiều cao ước lượng để chừa chỗ cho pagination + bottom bar
+const PAGINATION_HEIGHT = 56;
+const BOTTOM_BAR_HEIGHT = 60;
+
 const SelfStudyScreen: React.FC = () => {
   const navigation = useNavigation<SelfStudyNavProp>();
 
   // bottom tab
-  const [activeTab, setActiveTab] = useState<string>("Home");
+  const [activeTab, setActiveTab] = useState<SelfStudyTabName>("Home");
 
-  // ✅ header name
+  // header name
   const [name, setName] = useState<string>("");
 
-  // ✅ search: dùng ref để không re-render liên tục
+  // search
   const [showClearButton, setShowClearButton] = useState(false);
   const searchTextRef = useRef("");
   const searchInputRef = useRef<TextInput>(null);
 
-  // Recent
-  const [recentPublicLists, setRecentPublicLists] = useState<DocumentListItem[]>(
-    []
-  );
-  const [loadingRecent, setLoadingRecent] = useState<boolean>(false);
+  // data + paging
+  const [lists, setLists] = useState<DocumentListItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [page, setPage] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
+  const [totalElements, setTotalElements] = useState<number>(0);
+
+  const isSearching = useRef<boolean>(false);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -72,48 +82,69 @@ const SelfStudyScreen: React.FC = () => {
     loadUser();
   }, []);
 
-  const loadLists = async (keyword?: string) => {
-    try {
-      setLoadingRecent(true);
-      let res;
-
-      const trimmed = (keyword ?? "").trim();
-
-      if (!trimmed) {
-        res = await documentListService.getPublicLists(0, 10);
-      } else {
-        res = await documentListService.searchPublicByTitleOrType(trimmed, 0, 10);
-      }
-
-      const pageData = res.data;
-      const lists: DocumentListItem[] = pageData.content ?? [];
-
-      const listsWithCounts = await Promise.all(
-        lists.map(async (list) => {
-          try {
-            const itemsRes = await documentItemService.getByListId(list.listId);
-            const count = Array.isArray(itemsRes.data) ? itemsRes.data.length : 0;
-            return { ...list, itemCount: count };
-          } catch (err) {
-            console.log("Failed to load items for list", list.listId, err);
-            return { ...list, itemCount: 0 };
-          }
-        })
-      );
-
-      setRecentPublicLists(listsWithCounts);
-    } catch (error) {
-      console.log("Failed to load document lists:", error);
-    } finally {
-      setLoadingRecent(false);
-    }
-  };
-
-  useEffect(() => {
-    loadLists();
+  const addCountsForPage = useCallback(async (pageLists: DocumentListItem[]) => {
+    // ⚠️ Nếu backend có itemCount sẵn => bỏ đoạn này để giảm call
+    const listsWithCounts = await Promise.all(
+      pageLists.map(async (list) => {
+        try {
+          const itemsRes = await documentItemService.getByListId(list.listId);
+          const count = Array.isArray(itemsRes.data) ? itemsRes.data.length : 0;
+          return { ...list, itemCount: count };
+        } catch (err) {
+          console.log("Failed to load items for list", list.listId, err);
+          return { ...list, itemCount: 0 };
+        }
+      })
+    );
+    return listsWithCounts;
   }, []);
 
-  // ✅ search handlers (giống HomeScreen)
+  const fetchPagedLists = useCallback(
+    async (pageIndex: number, keyword?: string) => {
+      try {
+        setLoading(true);
+
+        const trimmed = (keyword ?? "").trim();
+        isSearching.current = !!trimmed;
+
+        let res;
+        if (!trimmed) {
+          res = await documentListService.getPublicLists(pageIndex, PAGE_SIZE);
+        } else {
+          res = await documentListService.searchPublicByTitleOrType(
+            trimmed,
+            pageIndex,
+            PAGE_SIZE
+          );
+        }
+
+        // Spring Pageable thường:
+        // { content, number, size, totalPages, totalElements, first, last, ... }
+        const pageData = res?.data ?? {};
+        const content: DocumentListItem[] = Array.isArray(pageData.content)
+          ? pageData.content
+          : [];
+
+        const contentWithCounts = await addCountsForPage(content);
+
+        setLists(contentWithCounts);
+        setPage(Number(pageData.number ?? pageIndex));
+        setTotalPages(Number(pageData.totalPages ?? 0));
+        setTotalElements(Number(pageData.totalElements ?? 0));
+      } catch (error) {
+        console.log("Failed to load document lists:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [addCountsForPage]
+  );
+
+  useEffect(() => {
+    fetchPagedLists(0, "");
+  }, [fetchPagedLists]);
+
+  // search handlers
   const handleChangeText = (text: string) => {
     searchTextRef.current = text;
 
@@ -122,17 +153,31 @@ const SelfStudyScreen: React.FC = () => {
   };
 
   const handleSearch = () => {
-    loadLists(searchTextRef.current);
+    fetchPagedLists(0, searchTextRef.current);
   };
 
   const handleClearSearch = () => {
     searchTextRef.current = "";
     setShowClearButton(false);
     searchInputRef.current?.clear();
-    loadLists(""); // reset về all
+    fetchPagedLists(0, "");
   };
 
-  const handleTabPress = (tabName: string) => {
+  // pagination actions
+  const canPrev = page > 0;
+  const canNext = totalPages > 0 && page < totalPages - 1;
+
+  const handlePrevPage = () => {
+    if (!canPrev || loading) return;
+    fetchPagedLists(page - 1, searchTextRef.current);
+  };
+
+  const handleNextPage = () => {
+    if (!canNext || loading) return;
+    fetchPagedLists(page + 1, searchTextRef.current);
+  };
+
+  const handleTabPress = (tabName: SelfStudyTabName) => {
     setActiveTab(tabName);
 
     if (tabName === "Home") return;
@@ -143,7 +188,6 @@ const SelfStudyScreen: React.FC = () => {
     }
 
     if (tabName === "Library") {
-      // nếu bạn đã có LibraryScreen thì đổi sang navigate("LibraryScreen")
       Alert.alert("Thông báo", "Chưa có màn Library. Bạn tạo route sau nhé.");
       return;
     }
@@ -154,9 +198,50 @@ const SelfStudyScreen: React.FC = () => {
     }
   };
 
+  const renderItem = ({ item }: { item: DocumentListItem }) => (
+    <TouchableOpacity
+      style={styles.recentItem}
+      onPress={() =>
+        navigation.navigate("DocumentListDetail", {
+          listId: item.listId,
+          title: item.title,
+          author: item.fullName,
+          itemCount: item.itemCount ?? 0,
+        })
+      }
+      activeOpacity={0.9}
+    >
+      <View style={styles.iconContainer}>
+        <Ionicons name="layers-outline" size={20} color="#555" />
+      </View>
+
+      <View style={{ flex: 1 }}>
+        <Text style={styles.lessonName}>{item.title}</Text>
+        <Text style={styles.lessonAuthor}>
+          {(item.itemCount ?? 0) + " thẻ · " + (item.fullName ?? "")}
+        </Text>
+      </View>
+
+      <Ionicons name="duplicate-outline" size={20} color="#888" />
+    </TouchableOpacity>
+  );
+
+  const ListEmpty = () => {
+    if (loading) return null;
+
+    const keyword = searchTextRef.current.trim();
+    return (
+      <Text style={styles.emptyText}>
+        Không tìm thấy kết quả{keyword ? ` cho "${keyword}"` : "."}
+      </Text>
+    );
+  };
+
+  const currentPageDisplay = totalPages === 0 ? 0 : page + 1;
+
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
-      {/* ✅ HEADER giống hình */}
+      {/* HEADER */}
       <View style={styles.header}>
         <Image source={foxImage} style={styles.avatar} resizeMode="contain" />
 
@@ -170,7 +255,7 @@ const SelfStudyScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* ✅ SEARCH giống hình + có nút X */}
+      {/* SEARCH */}
       <View style={styles.searchContainer}>
         <TouchableOpacity onPress={handleSearch}>
           <Ionicons name="search" size={22} color="#6B7280" />
@@ -196,54 +281,56 @@ const SelfStudyScreen: React.FC = () => {
         )}
       </View>
 
-      {/* BODY */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
-        <View style={styles.section}>
+      {/* LIST + PAGINATION */}
+      <View style={{ flex: 1 }}>
+        {loading && (
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="small" />
+            <Text style={styles.loadingText}>Đang tải...</Text>
+          </View>
+        )}
 
+        <FlatList
+          data={lists}
+          keyExtractor={(item) => String(item.listId)}
+          renderItem={renderItem}
+          ListEmptyComponent={ListEmpty}
+          contentContainerStyle={{
+            paddingTop: 10,
+            // ✅ chừa chỗ để list không bị che bởi pagination + bottom bar
+            paddingBottom: PAGINATION_HEIGHT + BOTTOM_BAR_HEIGHT + 40,
+          }}
+          showsVerticalScrollIndicator={false}
+        />
 
-          {loadingRecent && (
-            <Text style={{ paddingHorizontal: 20, color: "#777" }}>Loading...</Text>
-          )}
+        {/* Pagination footer */}
+        <View style={styles.paginationBar}>
+          <TouchableOpacity
+            onPress={handlePrevPage}
+            disabled={!canPrev || loading}
+            style={[styles.pageBtn, (!canPrev || loading) && styles.pageBtnDisabled]}
+          >
+            <Ionicons name="chevron-back" size={18} color="#111827" />
+            <Text style={styles.pageBtnText}>Trước</Text>
+          </TouchableOpacity>
 
-          {!loadingRecent && recentPublicLists.length === 0 && (
-            <Text style={{ paddingHorizontal: 20, color: "#777" }}>
-              No results found
-              {searchTextRef.current.trim()
-                ? ` for "${searchTextRef.current.trim()}"`
-                : "."}
+          {/* ✅ CHỈ 1 DÒNG để nằm ngang hàng với 2 nút */}
+          <View style={styles.pageInfo}>
+            <Text style={styles.pageInfoText}>
+              Trang {currentPageDisplay}/{totalPages}
             </Text>
-          )}
+          </View>
 
-          {!loadingRecent &&
-            recentPublicLists.map((lesson, index) => (
-              <TouchableOpacity
-                key={lesson.listId ?? index}
-                style={styles.recentItem}
-                onPress={() =>
-                  navigation.navigate("DocumentListDetail", {
-                    listId: lesson.listId,
-                    title: lesson.title,
-                    author: lesson.fullName,
-                    itemCount: lesson.itemCount ?? 0,
-                  })
-                }
-              >
-                <View style={styles.iconContainer}>
-                  <Ionicons name="layers-outline" size={20} color="#555" />
-                </View>
-
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.lessonName}>{lesson.title}</Text>
-                  <Text style={styles.lessonAuthor}>
-                    {(lesson.itemCount ?? 0) + " cards · " + (lesson.fullName ?? "")}
-                  </Text>
-                </View>
-
-                <Ionicons name="duplicate-outline" size={20} color="#888" />
-              </TouchableOpacity>
-            ))}
+          <TouchableOpacity
+            onPress={handleNextPage}
+            disabled={!canNext || loading}
+            style={[styles.pageBtn, (!canNext || loading) && styles.pageBtnDisabled]}
+          >
+            <Text style={styles.pageBtnText}>Sau</Text>
+            <Ionicons name="chevron-forward" size={18} color="#111827" />
+          </TouchableOpacity>
         </View>
-      </ScrollView>
+      </View>
 
       <SelfStudyBottomBar activeTab={activeTab} onTabPress={handleTabPress} />
     </SafeAreaView>
@@ -265,6 +352,7 @@ const styles = StyleSheet.create({
   welcomeText: { fontSize: 16, color: "#6B7280" },
   username: { fontSize: 26, fontWeight: "bold", color: "#111827" },
   avatar: { width: 50, height: 50 },
+
   searchContainer: {
     flexDirection: "row",
     backgroundColor: "#F3F4F6",
@@ -277,14 +365,6 @@ const styles = StyleSheet.create({
   },
   searchInput: { marginLeft: 10, fontSize: 16, flex: 1, color: "#111" },
 
-  section: { marginTop: 10 },
-  sectionTitle: {
-    color: "#000",
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 14,
-    paddingHorizontal: 20,
-  },
   recentItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -304,4 +384,66 @@ const styles = StyleSheet.create({
   },
   lessonName: { color: "#111", fontSize: 15, fontWeight: "600" },
   lessonAuthor: { color: "#777", fontSize: 13 },
+
+  emptyText: { paddingHorizontal: 20, color: "#777" },
+
+  loadingBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingBottom: 6,
+  },
+  loadingText: { color: "#777" },
+
+  // ✅ Pagination bar: height cố định + căn giữa dọc
+  paginationBar: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 70, // chừa chỗ cho bottom bar
+    height: PAGINATION_HEIGHT,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center", // ✅ nút + text cùng hàng
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+
+  pageBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
+    minWidth: 88, // ✅ giúp 2 nút đều nhau, trang ở giữa nhìn cân
+    justifyContent: "center",
+  },
+  pageBtnDisabled: { opacity: 0.5 },
+
+  pageBtnText: {
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+
+  // ✅ 1 dòng “Trang 1/2” luôn chính giữa, không bị lệch
+  pageInfo: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pageInfoText: {
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: "700",
+    lineHeight: 18,
+  },
 });
