@@ -9,6 +9,7 @@ import {
   ScrollView,
   Alert,
   GestureResponderEvent,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,6 +22,8 @@ import SelfStudyBottomBar from "../../components/SelfStudyBottomBar";
 import documentListService from "../../services/documentListService";
 import documentItemService from "../../services/documentItemService";
 import favoriteDocumentListService from "../../services/favoriteDocumentListService";
+
+import { SelfStudyTabName } from "./selfStudyBottomTabs"; // ✅ FIX TYPE
 
 type NavProp = NativeStackNavigationProp<AuthStackParamList, "LibraryScreen">;
 
@@ -39,6 +42,7 @@ type DocumentListItem = {
 
 const formatDateTime = (iso?: string) => {
   if (!iso) return "";
+  // nếu BE trả "2026-01-06T10:20:30" -> "2026-01-06 10:20:30"
   return iso.replace("T", " ").slice(0, 19);
 };
 
@@ -53,7 +57,8 @@ const LibraryScreen: React.FC = () => {
   const [myLists, setMyLists] = useState<DocumentListItem[]>([]);
   const [favoriteLists, setFavoriteLists] = useState<DocumentListItem[]>([]);
 
-  const [bottomTab, setBottomTab] = useState<string>("Library");
+  // ✅ FIX TYPE: bottom tab phải là SelfStudyTabName
+  const [bottomTab, setBottomTab] = useState<SelfStudyTabName>("Library");
 
   useEffect(() => {
     const loadUserId = async () => {
@@ -82,14 +87,14 @@ const LibraryScreen: React.FC = () => {
 
   const loadMyLists = async (uid: number) => {
     const res = await documentListService.getByUser(uid);
-    const data = res.data;
+    const data = res?.data;
     const lists: DocumentListItem[] = Array.isArray(data) ? data : data?.content ?? [];
     setMyLists(lists);
   };
 
   const loadFavorites = async (uid: number) => {
     const favRes = await favoriteDocumentListService.getByUser(uid);
-    const favData = favRes.data;
+    const favData = favRes?.data;
     const favArr: any[] = Array.isArray(favData) ? favData : favData?.content ?? [];
 
     const listIds = favArr
@@ -114,13 +119,14 @@ const LibraryScreen: React.FC = () => {
 
   const reload = async (tab?: TabKey) => {
     if (!userId) return;
+
     try {
       setLoading(true);
       if ((tab ?? activeTab) === "DOCS") await loadMyLists(userId);
       else await loadFavorites(userId);
     } catch (e) {
       console.log("Load library error:", e);
-      Alert.alert("Lỗi", "Không tải được dữ liệu Library.");
+      Alert.alert("Lỗi", "Không tải được dữ liệu Thư viện.");
     } finally {
       setLoading(false);
     }
@@ -164,11 +170,14 @@ const LibraryScreen: React.FC = () => {
   const handleToggleVisibility = async (e: GestureResponderEvent, listId: number) => {
     e.stopPropagation();
     try {
+      setLoading(true);
       await documentListService.toggleVisibility(listId);
-      await reload();
+      await reload("DOCS");
     } catch (err) {
       console.log("toggleVisibility error:", err);
       Alert.alert("Lỗi", "Không đổi được trạng thái công khai.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -183,7 +192,7 @@ const LibraryScreen: React.FC = () => {
 
     Alert.alert(
       "Xoá tài liệu",
-      `Bạn có chắc chắn muốn xoá "${title}" không?\n(Lưu ý: sẽ xoá luôn toàn bộ items)`,
+      `Bạn có chắc chắn muốn xoá "${title}" không?\n(Lưu ý: sẽ xoá luôn toàn bộ thẻ trong tài liệu)`,
       [
         { text: "Huỷ", style: "cancel" },
         {
@@ -211,25 +220,41 @@ const LibraryScreen: React.FC = () => {
     return activeTab === "DOCS" ? myLists : favoriteLists;
   }, [activeTab, myLists, favoriteLists]);
 
-  const handleBottomTabPress = (tabName: string) => {
+  // ✅ FIX TYPE: tabName SelfStudyTabName
+  const handleBottomTabPress = (tabName: SelfStudyTabName) => {
     setBottomTab(tabName);
 
-    if (tabName === "Home") return navigation.navigate("SelfStudyScreen");
-    if (tabName === "Create") return navigation.navigate("CreateDocumentList");
+    if (tabName === "Home") {
+      navigation.navigate("SelfStudyScreen");
+      return;
+    }
+
+    if (tabName === "Create") {
+      navigation.navigate("CreateDocumentList");
+      return;
+    }
+
     if (tabName === "Library") return;
+
     if (tabName === "Class") {
       Alert.alert("Thông báo", "Bạn chưa tạo màn Class.");
+      return;
+    }
+
+    if (tabName === "Logout") {
+      // SelfStudyBottomBar đã xử lý logout bên trong,
+      // nhưng nếu bạn muốn xử lý tại đây thì thêm logic.
       return;
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {/* HEADER */}
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>Library</Text>
+        <Text style={styles.headerTitle}>Thư viện</Text>
 
-        <TouchableOpacity onPress={() => reload()} style={styles.refreshBtn}>
+        <TouchableOpacity onPress={() => reload()} style={styles.refreshBtn} activeOpacity={0.9}>
           <Ionicons name="refresh-outline" size={20} color="#2563EB" />
         </TouchableOpacity>
       </View>
@@ -239,30 +264,37 @@ const LibraryScreen: React.FC = () => {
         <TouchableOpacity
           style={[styles.tabBtn, activeTab === "DOCS" && styles.tabBtnActive]}
           onPress={() => onChangeTab("DOCS")}
+          activeOpacity={0.9}
         >
           <Text style={[styles.tabText, activeTab === "DOCS" && styles.tabTextActive]}>
-            Tài liệu
+            Tài liệu của tôi
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={[styles.tabBtn, activeTab === "FAVORITES" && styles.tabBtnActive]}
           onPress={() => onChangeTab("FAVORITES")}
+          activeOpacity={0.9}
         >
           <Text style={[styles.tabText, activeTab === "FAVORITES" && styles.tabTextActive]}>
-            Tài liệu yêu thích
+            Yêu thích
           </Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 140 }}>
         {loading && (
-          <Text style={{ paddingHorizontal: 16, color: "#6B7280" }}>Loading...</Text>
+          <View style={{ paddingHorizontal: 16, flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <ActivityIndicator size="small" />
+            <Text style={{ color: "#6B7280" }}>Đang tải...</Text>
+          </View>
         )}
 
         {!loading && dataToRender.length === 0 && (
           <Text style={{ paddingHorizontal: 16, color: "#6B7280" }}>
-            {activeTab === "DOCS" ? "Bạn chưa có tài liệu nào." : "Bạn chưa có tài liệu yêu thích."}
+            {activeTab === "DOCS"
+              ? "Bạn chưa có tài liệu nào."
+              : "Bạn chưa có tài liệu yêu thích nào."}
           </Text>
         )}
 
@@ -278,11 +310,12 @@ const LibraryScreen: React.FC = () => {
                 <Text style={styles.dateText}>{formatDateTime(item.createdAt)}</Text>
 
                 <View style={styles.actions}>
-                  {/* ✅ Eye toggle CHỈ ở DOCS */}
+                  {/* Eye toggle CHỈ ở DOCS */}
                   {activeTab === "DOCS" && (
                     <TouchableOpacity
                       onPress={(e) => handleToggleVisibility(e, item.listId)}
                       style={styles.iconBtn}
+                      activeOpacity={0.9}
                     >
                       <Ionicons
                         name={item.isPublic === 0 ? "eye-outline" : "eye-off-outline"}
@@ -295,13 +328,18 @@ const LibraryScreen: React.FC = () => {
                   {/* Edit + Delete CHỈ ở DOCS */}
                   {activeTab === "DOCS" && (
                     <>
-                      <TouchableOpacity onPress={(e) => handleEdit(e, item.listId)} style={styles.iconBtn}>
+                      <TouchableOpacity
+                        onPress={(e) => handleEdit(e, item.listId)}
+                        style={styles.iconBtn}
+                        activeOpacity={0.9}
+                      >
                         <Ionicons name="create-outline" size={18} color="#2563EB" />
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         onPress={(e) => handleDeleteList(e, item.listId, item.title)}
                         style={styles.iconBtn}
+                        activeOpacity={0.9}
                       >
                         <Ionicons name="trash-outline" size={18} color="#EF4444" />
                       </TouchableOpacity>
@@ -313,13 +351,16 @@ const LibraryScreen: React.FC = () => {
               <View style={styles.cardBody}>
                 <Text style={styles.titleText}>{item.title}</Text>
                 <Text style={styles.subText}>
-                  {item.type} {item.fullName ? `· ${item.fullName}` : ""}
+                  {item.type}
+                  {item.fullName ? ` · ${item.fullName}` : ""}
+                  {activeTab === "DOCS" ? ` · ${item.isPublic === 0 ? "Công khai" : "Riêng tư"}` : ""}
                 </Text>
               </View>
             </TouchableOpacity>
           ))}
       </ScrollView>
 
+      {/* ✅ FIX: activeTab / onTabPress đúng type => hết lỗi */}
       <SelfStudyBottomBar activeTab={bottomTab} onTabPress={handleBottomTabPress} />
     </SafeAreaView>
   );

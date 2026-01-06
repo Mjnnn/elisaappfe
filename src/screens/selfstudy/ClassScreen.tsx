@@ -1,5 +1,7 @@
+// src/screens/selfstudy/ClassScreen.tsx
+
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -11,6 +13,8 @@ import SelfStudyBottomBar from "../../components/SelfStudyBottomBar";
 import MyClassesTab from "./tabs/MyClassesTab";
 import JoinedClassesTab from "./tabs/JoinedClassesTab";
 
+import { SelfStudyTabName } from "./selfStudyBottomTabs"; // ✅ FIX TYPE
+
 type NavProp = NativeStackNavigationProp<AuthStackParamList, "ClassScreen">;
 
 type TabKey = "MY" | "JOINED";
@@ -19,55 +23,87 @@ const ClassScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
 
   const [activeTab, setActiveTab] = useState<TabKey>("MY");
-  const [bottomTab, setBottomTab] = useState<string>("Class");
+
+  // ✅ FIX: bottom tab đúng type
+  const [bottomTab, setBottomTab] = useState<SelfStudyTabName>("Class");
+
   const [userId, setUserId] = useState<number | null>(null);
+  const [loadingUser, setLoadingUser] = useState<boolean>(true);
 
   useEffect(() => {
     const loadUserId = async () => {
       try {
+        setLoadingUser(true);
+
         const stored = await AsyncStorage.getItem("userId");
         if (!stored) {
           Alert.alert("Thông báo", "Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
           navigation.navigate("Login");
           return;
         }
+
         const parsed = Number(stored);
         if (Number.isNaN(parsed) || parsed <= 0) {
           Alert.alert("Lỗi", "userId lưu trong máy không hợp lệ.");
           navigation.navigate("Login");
           return;
         }
+
         setUserId(parsed);
       } catch (e) {
-        console.log(e);
+        console.log("Load userId error:", e);
         Alert.alert("Lỗi", "Không đọc được session đăng nhập.");
+      } finally {
+        setLoadingUser(false);
       }
     };
+
     loadUserId();
   }, [navigation]);
 
-  const handleBottomTabPress = (tabName: string) => {
+  // ✅ FIX: tabName SelfStudyTabName
+  const handleBottomTabPress = (tabName: SelfStudyTabName) => {
     setBottomTab(tabName);
 
-    if (tabName === "Home") return navigation.navigate("SelfStudyScreen");
-    if (tabName === "Create") return navigation.navigate("CreateDocumentList");
-    if (tabName === "Library") return navigation.navigate("LibraryScreen");
+    if (tabName === "Home") {
+      navigation.navigate("SelfStudyScreen");
+      return;
+    }
+
+    if (tabName === "Create") {
+      navigation.navigate("CreateDocumentList");
+      return;
+    }
+
+    if (tabName === "Library") {
+      navigation.navigate("LibraryScreen");
+      return;
+    }
+
     if (tabName === "Class") return;
+
+    if (tabName === "Logout") {
+      // Logout đã xử lý bên SelfStudyBottomBar
+      return;
+    }
   };
 
-  if (!userId) {
+  if (loadingUser || !userId) {
     return (
-      <SafeAreaView style={styles.container}>
-        <Text style={{ padding: 16, color: "#6B7280" }}>Loading...</Text>
+      <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
+        <View style={{ padding: 16, flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <ActivityIndicator size="small" />
+          <Text style={{ color: "#6B7280" }}>Đang tải...</Text>
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <Text style={styles.headerTitle}>Class</Text>
+        <Text style={styles.headerTitle}>Lớp học</Text>
 
         <TouchableOpacity
           style={styles.createBtn}
@@ -84,6 +120,7 @@ const ClassScreen: React.FC = () => {
         <TouchableOpacity
           style={[styles.tabBtn, activeTab === "MY" && styles.tabBtnActive]}
           onPress={() => setActiveTab("MY")}
+          activeOpacity={0.9}
         >
           <Text style={[styles.tabText, activeTab === "MY" && styles.tabTextActive]}>
             Lớp học của tôi
@@ -93,6 +130,7 @@ const ClassScreen: React.FC = () => {
         <TouchableOpacity
           style={[styles.tabBtn, activeTab === "JOINED" && styles.tabBtnActive]}
           onPress={() => setActiveTab("JOINED")}
+          activeOpacity={0.9}
         >
           <Text style={[styles.tabText, activeTab === "JOINED" && styles.tabTextActive]}>
             Lớp học tham gia
@@ -101,12 +139,9 @@ const ClassScreen: React.FC = () => {
       </View>
 
       {/* Body */}
-      {activeTab === "MY" ? (
-        <MyClassesTab userId={userId} />
-      ) : (
-        <JoinedClassesTab userId={userId} />
-      )}
+      {activeTab === "MY" ? <MyClassesTab userId={userId} /> : <JoinedClassesTab userId={userId} />}
 
+      {/* ✅ FIX: không còn lỗi type */}
       <SelfStudyBottomBar activeTab={bottomTab} onTabPress={handleBottomTabPress} />
     </SafeAreaView>
   );
