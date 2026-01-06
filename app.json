@@ -13,7 +13,9 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.elisaappfe.app",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +23,25 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.elisaappfe.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
-    }
+    },
+    "plugins": [
+      "@react-native-google-signin/google-signin",
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "2281587079019693",
+          "scheme": "fb2281587079019693",
+          "clientToken": "8242e6fc7a81674d202c0f2da9c8f010",
+          "appName": "elisaappfe",
+          "displayName": "Elisa-App"
+        }
+      ]
+    ]
   }
 }
