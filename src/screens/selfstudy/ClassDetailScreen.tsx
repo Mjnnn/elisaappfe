@@ -1,3 +1,4 @@
+// src/screens/selfstudy/ClassDetailScreen.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
@@ -53,10 +54,11 @@ type ClassDocumentListResponse = {
   listId: number;
   listTitle: string;
   assignedAt?: string;
-  fullName?: string;
+  fullName?: string; // người gán / giảng viên
   avatarImage?: string;
   description?: string;
   type?: string;
+  // itemCount?: number; // nếu BE có trả thì bạn thêm vào đây
 };
 
 const formatDateTime = (iso?: string) => {
@@ -71,12 +73,20 @@ const AccordionHeader: React.FC<{
   onToggle: () => void;
 }> = ({ title, subtitle, open, onToggle }) => {
   return (
-    <TouchableOpacity style={styles.accHeader} onPress={onToggle} activeOpacity={0.9}>
+    <TouchableOpacity
+      style={styles.accHeader}
+      onPress={onToggle}
+      activeOpacity={0.9}
+    >
       <View style={{ flex: 1 }}>
         <Text style={styles.accTitle}>{title}</Text>
         {!!subtitle && <Text style={styles.accSub}>{subtitle}</Text>}
       </View>
-      <Ionicons name={open ? "chevron-up" : "chevron-down"} size={18} color="#111" />
+      <Ionicons
+        name={open ? "chevron-up" : "chevron-down"}
+        size={18}
+        color="#111"
+      />
     </TouchableOpacity>
   );
 };
@@ -114,14 +124,23 @@ const ClassDetailScreen: React.FC = () => {
 
   useEffect(() => {
     const loadMe = async () => {
-      const stored = await AsyncStorage.getItem("userId");
-      const parsed = Number(stored);
-      if (!stored || Number.isNaN(parsed) || parsed <= 0) {
-        Alert.alert("Thông báo", "Bạn chưa đăng nhập. Vui lòng đăng nhập lại.");
-        navigation.navigate("Login");
-        return;
+      try {
+        const stored = await AsyncStorage.getItem("userId");
+        const parsed = Number(stored);
+        if (!stored || Number.isNaN(parsed) || parsed <= 0) {
+          Alert.alert(
+            "Thông báo",
+            "Bạn chưa đăng nhập. Vui lòng đăng nhập lại."
+          );
+          navigation.navigate("Login" as never);
+          return;
+        }
+        setMeId(parsed);
+      } catch (e) {
+        console.log(e);
+        Alert.alert("Lỗi", "Không đọc được userId. Vui lòng đăng nhập lại.");
+        navigation.navigate("Login" as never);
       }
-      setMeId(parsed);
     };
     loadMe();
   }, [navigation]);
@@ -144,12 +163,16 @@ const ClassDetailScreen: React.FC = () => {
 
       const memRes = await classUserService.getByClass(classId);
       const memData = memRes.data;
-      const memArr: ClassUserResponse[] = Array.isArray(memData) ? memData : memData?.content ?? [];
+      const memArr: ClassUserResponse[] = Array.isArray(memData)
+        ? memData
+        : memData?.content ?? [];
       setMembers(memArr);
 
       const listRes = await classDocumentListService.getByClassId(classId);
       const listData = listRes.data;
-      const listArr: ClassDocumentListResponse[] = Array.isArray(listData) ? listData : listData?.content ?? [];
+      const listArr: ClassDocumentListResponse[] = Array.isArray(listData)
+        ? listData
+        : listData?.content ?? [];
       setLists(listArr);
 
       if (meId) {
@@ -183,12 +206,11 @@ const ClassDetailScreen: React.FC = () => {
     try {
       setLoading(true);
 
-      // ✅ owner được sửa name/description; password giữ nguyên (không đổi ở đây)
       await classService.update(classId, {
         className: className.trim(),
         description: description.trim(),
         userId: klass?.userId ?? meId,
-        password: klass?.password ?? "", // giữ để BE không lỗi nếu bắt buộc
+        password: klass?.password ?? "",
       });
 
       Alert.alert("OK", "Đã lưu thông tin lớp.");
@@ -213,11 +235,9 @@ const ClassDetailScreen: React.FC = () => {
     try {
       setLoading(true);
 
-      // ✅ 1) Lấy user theo email
       const uRes = await userService.getByEmail(email);
       const u = uRes.data;
 
-      // tuỳ backend trả field gì: userId / id
       const uid: number | undefined = u?.userId ?? u?.id;
 
       if (!uid || Number.isNaN(Number(uid)) || Number(uid) <= 0) {
@@ -230,7 +250,6 @@ const ClassDetailScreen: React.FC = () => {
         return;
       }
 
-      // ✅ 2) Tạo quan hệ class-user
       await classUserService.create({ classId, userId: uid });
 
       Alert.alert("OK", "Đã thêm thành viên vào lớp.");
@@ -240,7 +259,8 @@ const ClassDetailScreen: React.FC = () => {
       console.log(e);
       Alert.alert(
         "Lỗi",
-        e?.response?.data?.message ?? "Thêm thành viên thất bại (email không tồn tại hoặc lỗi hệ thống)."
+        e?.response?.data?.message ??
+          "Thêm thành viên thất bại (email không tồn tại hoặc lỗi hệ thống)."
       );
     } finally {
       setLoading(false);
@@ -250,32 +270,39 @@ const ClassDetailScreen: React.FC = () => {
   const confirmRemoveMember = (m: ClassUserResponse) => {
     if (!isOwner) return;
 
-    Alert.alert("Xoá thành viên", `Bạn chắc chắn muốn xoá "${m.userFullName ?? "User"}" khỏi lớp?`, [
-      { text: "Huỷ", style: "cancel" },
-      {
-        text: "Xoá",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setLoading(true);
-            await classUserService.delete(m.classUserId);
-            Alert.alert("OK", "Đã xoá thành viên.");
-            await loadAll();
-          } catch (e) {
-            console.log(e);
-            Alert.alert("Lỗi", "Xoá thành viên thất bại.");
-          } finally {
-            setLoading(false);
-          }
+    Alert.alert(
+      "Xoá thành viên",
+      `Bạn chắc chắn muốn xoá "${m.userFullName ?? "User"}" khỏi lớp?`,
+      [
+        { text: "Huỷ", style: "cancel" },
+        {
+          text: "Xoá",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await classUserService.delete(m.classUserId);
+              Alert.alert("OK", "Đã xoá thành viên.");
+              await loadAll();
+            } catch (e) {
+              console.log(e);
+              Alert.alert("Lỗi", "Xoá thành viên thất bại.");
+            } finally {
+              setLoading(false);
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const handleAssignList = async () => {
     if (!isOwner) return;
     if (!pickedListId) {
-      Alert.alert("Thiếu thông tin", "Vui lòng chọn 1 tài liệu để thêm vào lớp.");
+      Alert.alert(
+        "Thiếu thông tin",
+        "Vui lòng chọn 1 tài liệu để thêm vào lớp."
+      );
       return;
     }
     if (lists.some((x) => Number(x.listId) === Number(pickedListId))) {
@@ -300,26 +327,30 @@ const ClassDetailScreen: React.FC = () => {
   const confirmRemoveList = (x: ClassDocumentListResponse) => {
     if (!isOwner) return;
 
-    Alert.alert("Xoá tài liệu khỏi lớp", `Bạn chắc chắn muốn xoá "${x.listTitle}" khỏi lớp?`, [
-      { text: "Huỷ", style: "cancel" },
-      {
-        text: "Xoá",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setLoading(true);
-            await classDocumentListService.delete(x.classDocumentListId);
-            Alert.alert("OK", "Đã xoá tài liệu khỏi lớp.");
-            await loadAll();
-          } catch (e) {
-            console.log(e);
-            Alert.alert("Lỗi", "Xoá tài liệu thất bại.");
-          } finally {
-            setLoading(false);
-          }
+    Alert.alert(
+      "Xoá tài liệu khỏi lớp",
+      `Bạn chắc chắn muốn xoá "${x.listTitle}" khỏi lớp?`,
+      [
+        { text: "Huỷ", style: "cancel" },
+        {
+          text: "Xoá",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await classDocumentListService.delete(x.classDocumentListId);
+              Alert.alert("OK", "Đã xoá tài liệu khỏi lớp.");
+              await loadAll();
+            } catch (e) {
+              console.log(e);
+              Alert.alert("Lỗi", "Xoá tài liệu thất bại.");
+            } finally {
+              setLoading(false);
+            }
+          },
         },
-      },
-    ]);
+      ]
+    );
   };
 
   const confirmLeaveClass = async () => {
@@ -370,19 +401,24 @@ const ClassDetailScreen: React.FC = () => {
           try {
             setLoading(true);
 
-            // best-effort cleanup
             try {
               await Promise.all(
-                members.map((m) => (m?.classUserId ? classUserService.delete(m.classUserId) : Promise.resolve()))
+                members.map((m) =>
+                  m?.classUserId
+                    ? classUserService.delete(m.classUserId)
+                    : Promise.resolve()
+                )
               );
-            } catch { }
+            } catch {}
             try {
               await Promise.all(
                 lists.map((x) =>
-                  x?.classDocumentListId ? classDocumentListService.delete(x.classDocumentListId) : Promise.resolve()
+                  x?.classDocumentListId
+                    ? classDocumentListService.delete(x.classDocumentListId)
+                    : Promise.resolve()
                 )
               );
-            } catch { }
+            } catch {}
 
             await classService.delete(classId);
             Alert.alert("OK", "Đã xoá lớp.");
@@ -398,11 +434,24 @@ const ClassDetailScreen: React.FC = () => {
     ]);
   };
 
+  // ✅ CLICK DOC -> navigate sang DocumentListDetail
+  const openDocumentDetail = (doc: ClassDocumentListResponse) => {
+    navigation.navigate("DocumentListDetail", {
+      listId: doc.listId,
+      title: doc.listTitle,
+      author: doc.fullName ?? klass?.userFullName ?? "Unknown",
+      itemCount: 0, // nếu BE có itemCount thì đổi: doc.itemCount ?? 0
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={styles.backBtn}
+          onPress={() => navigation.goBack()}
+        >
           <Ionicons name="chevron-back" size={22} color="#111" />
         </TouchableOpacity>
 
@@ -428,14 +477,16 @@ const ClassDetailScreen: React.FC = () => {
         <View style={styles.accBox}>
           <AccordionHeader
             title="Thông tin lớp học"
-            subtitle={klass?.createdAt ? `Tạo ngày ${formatDateTime(klass.createdAt)}` : undefined}
+            subtitle={
+              klass?.createdAt ? `Tạo ngày ${formatDateTime(klass.createdAt)}` : undefined
+            }
             open={openInfo}
             onToggle={() => setOpenInfo((p) => !p)}
           />
 
           {openInfo && (
             <View style={styles.accContent}>
-              {/* ✅ OWNER: hiện Class ID + Password */}
+              {/* OWNER: hiện Class ID + Password */}
               {isOwner && (
                 <View style={styles.metaRow}>
                   <View style={{ flex: 1 }}>
@@ -451,7 +502,10 @@ const ClassDetailScreen: React.FC = () => {
                         {showPass ? (klass?.password ?? "") : "••••••••"}
                       </Text>
 
-                      <TouchableOpacity onPress={() => setShowPass((p) => !p)} style={styles.eyeBtn}>
+                      <TouchableOpacity
+                        onPress={() => setShowPass((p) => !p)}
+                        style={styles.eyeBtn}
+                      >
                         <Ionicons
                           name={showPass ? "eye-off-outline" : "eye-outline"}
                           size={18}
@@ -484,10 +538,16 @@ const ClassDetailScreen: React.FC = () => {
                 multiline
               />
 
-              <Text style={styles.boxSub2}>Giảng viên: {klass?.userFullName ?? "-"}</Text>
+              <Text style={styles.boxSub2}>
+                Giảng viên: {klass?.userFullName ?? "-"}
+              </Text>
 
               {isOwner && (
-                <TouchableOpacity style={styles.primaryBtn} onPress={handleSaveClassInfo} activeOpacity={0.9}>
+                <TouchableOpacity
+                  style={styles.primaryBtn}
+                  onPress={handleSaveClassInfo}
+                  activeOpacity={0.9}
+                >
                   <Text style={styles.primaryText}>Lưu thông tin lớp</Text>
                 </TouchableOpacity>
               )}
@@ -516,7 +576,11 @@ const ClassDetailScreen: React.FC = () => {
                     autoCapitalize="none"
                     style={[styles.input, { flex: 1, marginBottom: 0 }]}
                   />
-                  <TouchableOpacity style={styles.smallBtn} onPress={handleAddMemberByEmail} activeOpacity={0.9}>
+                  <TouchableOpacity
+                    style={styles.smallBtn}
+                    onPress={handleAddMemberByEmail}
+                    activeOpacity={0.9}
+                  >
                     <Text style={styles.smallBtnText}>Thêm</Text>
                   </TouchableOpacity>
                 </View>
@@ -528,7 +592,9 @@ const ClassDetailScreen: React.FC = () => {
                 members.map((m) => (
                   <View key={m.classUserId} style={styles.rowItem}>
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.rowTitle}>{m.userFullName ?? `User ${m.userId}`}</Text>
+                      <Text style={styles.rowTitle}>
+                        {m.userFullName ?? `User ${m.userId}`}
+                      </Text>
                       <Text style={styles.rowSub}>
                         {m.email ? m.email + " · " : ""}
                         Tham gia: {formatDateTime(m.joinedAt)}
@@ -540,7 +606,9 @@ const ClassDetailScreen: React.FC = () => {
                         onPress={() => confirmRemoveMember(m)}
                         style={[styles.tagBtn, { backgroundColor: "#FEF2F2" }]}
                       >
-                        <Text style={[styles.tagText, { color: "#EF4444" }]}>Xoá</Text>
+                        <Text style={[styles.tagText, { color: "#EF4444" }]}>
+                          Xoá
+                        </Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -563,9 +631,15 @@ const ClassDetailScreen: React.FC = () => {
             <View style={styles.accContent}>
               {isOwner && (
                 <View style={styles.assignBox}>
-                  <Text style={styles.miniLabel}>Chọn tài liệu của bạn để thêm vào lớp</Text>
+                  <Text style={styles.miniLabel}>
+                    Chọn tài liệu của bạn để thêm vào lớp
+                  </Text>
 
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 10 }}
+                  >
                     {myDocLists.map((d: any) => {
                       const active = Number(d.listId) === Number(pickedListId);
                       return (
@@ -574,7 +648,10 @@ const ClassDetailScreen: React.FC = () => {
                           onPress={() => setPickedListId(d.listId)}
                           style={[styles.chip, active && styles.chipActive]}
                         >
-                          <Text style={[styles.chipText, active && styles.chipTextActive]} numberOfLines={1}>
+                          <Text
+                            style={[styles.chipText, active && styles.chipTextActive]}
+                            numberOfLines={1}
+                          >
                             {d.title}
                           </Text>
                         </TouchableOpacity>
@@ -582,7 +659,11 @@ const ClassDetailScreen: React.FC = () => {
                     })}
                   </ScrollView>
 
-                  <TouchableOpacity style={styles.smallPrimary} onPress={handleAssignList} activeOpacity={0.9}>
+                  <TouchableOpacity
+                    style={styles.smallPrimary}
+                    onPress={handleAssignList}
+                    activeOpacity={0.9}
+                  >
                     <Text style={styles.smallPrimaryText}>Thêm tài liệu</Text>
                   </TouchableOpacity>
                 </View>
@@ -592,21 +673,34 @@ const ClassDetailScreen: React.FC = () => {
                 <Text style={styles.muted}>Chưa có tài liệu nào trong lớp.</Text>
               ) : (
                 lists.map((x) => (
-                  <View key={x.classDocumentListId} style={styles.docCard}>
+                  <TouchableOpacity
+                    key={x.classDocumentListId}
+                    style={styles.docCard}
+                    activeOpacity={0.9}
+                    onPress={() => openDocumentDetail(x)}
+                  >
                     <View style={{ flex: 1 }}>
                       <Text style={styles.docTitle}>{x.listTitle}</Text>
                       <Text style={styles.docSub}>
-                        {x.type ?? ""} {x.fullName ? `· ${x.fullName}` : ""}
+                        {x.type ? x.type : ""} {x.fullName ? `· ${x.fullName}` : ""}
                       </Text>
-                      <Text style={styles.docSub2}>Gán lúc: {formatDateTime(x.assignedAt)}</Text>
+                      <Text style={styles.docSub2}>
+                        Gán lúc: {formatDateTime(x.assignedAt)}
+                      </Text>
                     </View>
 
-                    {isOwner && (
-                      <TouchableOpacity onPress={() => confirmRemoveList(x)} style={styles.trashSmall}>
+                    {isOwner ? (
+                      <TouchableOpacity
+                        onPress={() => confirmRemoveList(x)}
+                        style={styles.trashSmall}
+                        activeOpacity={0.9}
+                      >
                         <Ionicons name="trash-outline" size={18} color="#EF4444" />
                       </TouchableOpacity>
+                    ) : (
+                      <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
                     )}
-                  </View>
+                  </TouchableOpacity>
                 ))
               )}
             </View>
@@ -723,7 +817,12 @@ const styles = StyleSheet.create({
   },
   primaryText: { color: "#fff", fontWeight: "900" },
 
-  inlineBox: { flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 },
+  inlineBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 10,
+  },
 
   smallBtn: {
     paddingHorizontal: 14,
