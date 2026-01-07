@@ -12,7 +12,8 @@ if (__DEV__) {
         //  hostname = '10.0.2.2';
     } else {
         // iOS Simulator -> có thể dùng localhost/127.0.0.1
-        hostname = 'localhost'; 
+         hostname = 'localhost'; 
+        // hostname = '192.168.186.156';
     }
 } else {
     // Môi trường Sản phẩm (Production)

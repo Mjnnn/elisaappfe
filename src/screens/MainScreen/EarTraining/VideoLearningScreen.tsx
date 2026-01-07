@@ -35,7 +35,6 @@ const LEVEL_THEMES: Record<string, { primary: string; secondary: string; name: s
     DEFAULT: { primary: '#2196F3', secondary: '#E3F2FD', name: 'General' } // Fallback
 };
 
-// Theme cơ bản (giữ lại các màu trung tính)
 const BASE_THEME = {
     background: '#F5F7FA',
     cardBg: '#FFFFFF',
@@ -101,7 +100,6 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
                         const currentTimeMs = timeInSeconds * 1000;
                         const currentSub = videoData.subtitles[currentIndex];
 
-                        // Tự động dừng khi hết câu
                         if (currentTimeMs >= currentSub.endTime - 100) {
                             setPlaying(false);
                         }
@@ -115,22 +113,20 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
     }, [playing, currentIndex, videoData]);
 
     // --- CÁC HÀM XỬ LÝ ---
-
-    // Hàm mới: Xử lý logic Play/Pause thông minh hơn
     const togglePlaying = async () => {
         if (playing) {
             setPlaying(false);
         } else {
-            // Khi bấm Play: Kiểm tra xem video có đang kẹt ở cuối câu không
             if (videoData && videoData.subtitles[currentIndex]) {
                 try {
                     const currentSub = videoData.subtitles[currentIndex];
                     const currentTime = await playerRef.current?.getCurrentTime();
 
-                    // Nếu thời gian hiện tại đã vượt quá (hoặc gần sát) thời gian kết thúc câu (trừ hao 200ms)
-                    // Thì tua lại đầu câu để tránh bị logic interval dừng lại ngay lập tức
+                    // Thủ thuật: Seek lại chính thời gian hiện tại hoặc đầu câu để kích hoạt WebView đang "ngủ"
                     if (currentTime && (currentTime * 1000 >= currentSub.endTime - 200)) {
                         playerRef.current?.seekTo(currentSub.startTime / 1000, true);
+                    } else if (currentTime !== undefined) {
+                        playerRef.current?.seekTo(currentTime, true);
                     }
                 } catch (e) {
                     console.log("Lỗi check thời gian:", e);
@@ -206,45 +202,23 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
 
     return (
         <View style={styles.container}>
-            {/* --- HEADER --- */}
-            <StatusBar
-                barStyle="light-content"
-                backgroundColor="transparent"
-                translucent={true}
-            />
+            <StatusBar barStyle="light-content" backgroundColor="transparent" translucent={true} />
 
-            <View style={[
-                styles.headerBackground,
-                {
-                    backgroundColor: activeTheme.primary,
-                    shadowColor: activeTheme.primary
-                }
-            ]}>
+            <View style={[styles.headerBackground, { backgroundColor: activeTheme.primary, shadowColor: activeTheme.primary }]}>
                 <SafeAreaView>
                     <View style={styles.headerContent}>
-                        <TouchableOpacity
-                            onPress={() => navigation.goBack()}
-                            style={styles.headerBtn}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                        >
+                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
                             <MaterialCommunityIcons name="arrow-left" size={26} color="#FFF" />
                         </TouchableOpacity>
-
                         <View style={styles.headerTitleContainer}>
-                            <Text style={styles.headerSubtitle}>
-                                {activeTheme.name.toUpperCase()} - {videoData.level}
-                            </Text>
-                            <Text style={styles.headerTitleMain} numberOfLines={1}>
-                                {videoData.title}
-                            </Text>
+                            <Text style={styles.headerSubtitle}>{activeTheme.name.toUpperCase()} - {videoData.level}</Text>
+                            <Text style={styles.headerTitleMain} numberOfLines={1}>{videoData.title}</Text>
                         </View>
-
                         <View style={[styles.headerBtn, { backgroundColor: 'transparent' }]} />
                     </View>
                 </SafeAreaView>
             </View>
 
-            {/* --- VIDEO PLAYER & CONTROLS --- */}
             <View style={styles.videoContainer}>
                 <YoutubePlayer
                     ref={playerRef}
@@ -264,17 +238,12 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
                     <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: activeTheme.primary }]} />
                 </View>
 
-                {/* SỬA LOGIC NÚT BẮT ĐẦU / TẠM DỪNG TẠI ĐÂY */}
                 <View style={styles.videoControlsRow}>
                     <TouchableOpacity
                         style={[styles.videoControlBtn, { backgroundColor: activeTheme.secondary }]}
-                        onPress={togglePlaying} // Sử dụng hàm togglePlaying mới
+                        onPress={togglePlaying}
                     >
-                        <MaterialCommunityIcons
-                            name={playing ? "pause" : "play"}
-                            size={20}
-                            color={activeTheme.primary}
-                        />
+                        <MaterialCommunityIcons name={playing ? "pause" : "play"} size={20} color={activeTheme.primary} />
                         <Text style={[styles.videoControlText, { color: activeTheme.primary }]}>
                             {playing ? "Tạm dừng" : "Bắt đầu"}
                         </Text>
@@ -287,14 +256,7 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
                 </View>
             </View>
 
-            {/* --- SCROLL CONTENT --- */}
-            <ScrollView
-                ref={scrollViewRef}
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                keyboardShouldPersistTaps="handled"
-            >
-                {/* DICTATION CARD */}
+            <ScrollView ref={scrollViewRef} style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
                 <View style={styles.card}>
                     <View style={styles.cardHeaderRow}>
                         <Text style={styles.cardTitle}>Chép chính tả</Text>
@@ -312,11 +274,7 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
 
                     <Animatable.View ref={inputRef}>
                         <TextInput
-                            style={[
-                                styles.inputApi,
-                                status === 'CORRECT' && styles.inputCorrect,
-                                status === 'WRONG' && styles.inputWrong
-                            ]}
+                            style={[styles.inputApi, status === 'CORRECT' && styles.inputCorrect, status === 'WRONG' && styles.inputWrong]}
                             placeholder="Gõ câu trả lời..."
                             placeholderTextColor="#B2BEC3"
                             multiline
@@ -332,9 +290,7 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
                                 <Text style={styles.correctAnswerText}>{currentSub.content}</Text>
                             </Animatable.View>
                         ) : (
-                            <Text style={styles.maskedText}>
-                                {maskContent(currentSub.content)}
-                            </Text>
+                            <Text style={styles.maskedText}>{maskContent(currentSub.content)}</Text>
                         )}
                     </View>
 
@@ -346,25 +302,11 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
                             </TouchableOpacity>
                         ) : (
                             <>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.actionBtn,
-                                        styles.btnPrimary,
-                                        { backgroundColor: activeTheme.primary, shadowColor: activeTheme.primary }
-                                    ]}
-                                    onPress={checkAnswer}
-                                >
+                                <TouchableOpacity style={[styles.actionBtn, styles.btnPrimary, { backgroundColor: activeTheme.primary, shadowColor: activeTheme.primary }]} onPress={checkAnswer}>
                                     <Text style={styles.actionBtnText}>Kiểm tra</Text>
                                 </TouchableOpacity>
                                 {!isRevealed && (
-                                    <TouchableOpacity
-                                        style={[
-                                            styles.actionBtn,
-                                            styles.btnSecondary,
-                                            { borderColor: activeTheme.primary }
-                                        ]}
-                                        onPress={toggleReveal}
-                                    >
+                                    <TouchableOpacity style={[styles.actionBtn, styles.btnSecondary, { borderColor: activeTheme.primary }]} onPress={toggleReveal}>
                                         <Text style={[styles.actionBtnText, { color: activeTheme.primary }]}>Hiện đáp án</Text>
                                     </TouchableOpacity>
                                 )}
@@ -379,7 +321,6 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
                     </View>
                 </View>
 
-                {/* TRANSCRIPT LIST */}
                 <View style={styles.transcriptSection}>
                     <Text style={styles.sectionHeader}>Danh sách câu ({currentIndex + 1}/{videoData.subtitles.length})</Text>
                     {videoData.subtitles.map((sub, index) => {
@@ -388,13 +329,7 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
                         return (
                             <TouchableOpacity
                                 key={sub.id}
-                                style={[
-                                    styles.transcriptItem,
-                                    isActive && {
-                                        borderColor: activeTheme.primary,
-                                        backgroundColor: activeTheme.secondary
-                                    }
-                                ]}
+                                style={[styles.transcriptItem, isActive && { borderColor: activeTheme.primary, backgroundColor: activeTheme.secondary }]}
                                 onPress={() => {
                                     if (isPassed || isActive) {
                                         setCurrentIndex(index);
@@ -406,14 +341,7 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
                                 }}
                             >
                                 <View style={styles.transcriptIndexBox}>
-                                    <Text
-                                        style={[
-                                            styles.transcriptIndexText,
-                                            isActive && { color: activeTheme.primary }
-                                        ]}
-                                    >
-                                        #{index + 1}
-                                    </Text>
+                                    <Text style={[styles.transcriptIndexText, isActive && { color: activeTheme.primary }]}>#{index + 1}</Text>
                                 </View>
                                 <View style={styles.transcriptContentBox}>
                                     <Text style={[styles.transcriptText, isPassed && { color: BASE_THEME.textDark }]} numberOfLines={2}>
@@ -421,13 +349,7 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
                                     </Text>
                                 </View>
                                 <View style={styles.transcriptIconBox}>
-                                    {isPassed ? (
-                                        <MaterialCommunityIcons name="check-circle" size={20} color={BASE_THEME.success} />
-                                    ) : isActive ? (
-                                        <MaterialCommunityIcons name="pencil" size={20} color={activeTheme.primary} />
-                                    ) : (
-                                        <MaterialCommunityIcons name="lock" size={18} color={BASE_THEME.hint} />
-                                    )}
+                                    {isPassed ? <MaterialCommunityIcons name="check-circle" size={20} color={BASE_THEME.success} /> : isActive ? <MaterialCommunityIcons name="pencil" size={20} color={activeTheme.primary} /> : <MaterialCommunityIcons name="lock" size={18} color={BASE_THEME.hint} />}
                                 </View>
                             </TouchableOpacity>
                         );
@@ -440,84 +362,26 @@ const VideoLearningScreen = ({ route, navigation }: any) => {
 
 export default VideoLearningScreen;
 
-// --- STYLES ---
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: BASE_THEME.background },
     center: { justifyContent: 'center', alignItems: 'center' },
-
-    headerBackground: {
-        backgroundColor: LEVEL_THEMES.DEFAULT.primary,
-        paddingTop: Platform.OS === 'android' ? 0 : 0,
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        elevation: 8,
-        shadowColor: LEVEL_THEMES.DEFAULT.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        zIndex: 100,
-    },
-    headerContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        marginTop: 10,
-    },
-    headerBtn: {
-        width: 40,
-        height: 40,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        borderRadius: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerTitleContainer: {
-        flex: 1,
-        alignItems: 'center',
-        marginHorizontal: 10,
-    },
-    headerSubtitle: {
-        fontSize: 11,
-        color: 'rgba(255,255,255,0.9)',
-        textTransform: 'uppercase',
-        fontWeight: '700',
-        letterSpacing: 1,
-        marginBottom: 2,
-    },
-    headerTitleMain: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#FFFFFF',
-        textAlign: 'center',
-    },
-
-    videoContainer: {
-        backgroundColor: '#000',
-        elevation: 5,
-        zIndex: 10,
-        marginTop: 15,
-        marginHorizontal: 15,
-        borderRadius: 15,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-    },
+    headerBackground: { borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 8, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, zIndex: 100, paddingBottom: 15 },
+    headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: 10 },
+    headerBtn: { width: 40, height: 40, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+    headerTitleContainer: { flex: 1, alignItems: 'center', marginHorizontal: 10 },
+    headerSubtitle: { fontSize: 11, color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', fontWeight: '700', letterSpacing: 1, marginBottom: 2 },
+    headerTitleMain: { fontSize: 18, fontWeight: 'bold', color: '#FFFFFF', textAlign: 'center' },
+    videoContainer: { backgroundColor: '#000', elevation: 5, zIndex: 10, marginTop: 15, marginHorizontal: 15, borderRadius: 15, overflow: 'hidden' },
     overallProgress: { height: 4, backgroundColor: '#E0E0E0' },
-    progressBarFill: { height: '100%', backgroundColor: LEVEL_THEMES.DEFAULT.primary },
+    progressBarFill: { height: '100%' },
     videoControlsRow: { flexDirection: 'row', backgroundColor: BASE_THEME.cardBg, padding: 12, justifyContent: 'space-around', borderBottomWidth: 1, borderBottomColor: '#EEE' },
-    videoControlBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: LEVEL_THEMES.DEFAULT.secondary, paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
-    videoControlText: { marginLeft: 6, color: LEVEL_THEMES.DEFAULT.primary, fontWeight: '600', fontSize: 13 },
-
+    videoControlBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 20 },
+    videoControlText: { marginLeft: 6, fontWeight: '600', fontSize: 13 },
     scrollView: { flex: 1 },
     scrollContent: { padding: 15, paddingBottom: 30 },
-
-    card: { backgroundColor: BASE_THEME.cardBg, borderRadius: 16, padding: 20, marginBottom: 20, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3 },
+    card: { backgroundColor: BASE_THEME.cardBg, borderRadius: 16, padding: 20, marginBottom: 20, elevation: 2 },
     cardHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
     cardTitle: { fontSize: 18, fontWeight: 'bold', color: BASE_THEME.textDark },
-
     dictationControls: { flexDirection: 'row', alignItems: 'center' },
     controlIcon: { marginRight: 15 },
     speedText: { fontWeight: 'bold', color: BASE_THEME.textDark, backgroundColor: BASE_THEME.background, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, fontSize: 12 },
@@ -525,18 +389,15 @@ const styles = StyleSheet.create({
     inputApi: { backgroundColor: BASE_THEME.background, borderRadius: 12, padding: 15, fontSize: 16, color: BASE_THEME.textDark, borderWidth: 1, borderColor: '#F0F0F0', minHeight: 120, textAlignVertical: 'top' },
     inputCorrect: { borderColor: BASE_THEME.success, backgroundColor: '#E8F5E9', color: BASE_THEME.success },
     inputWrong: { borderColor: BASE_THEME.error, backgroundColor: '#FFEBEE' },
-
     hintContainer: { marginVertical: 20, padding: 15, backgroundColor: BASE_THEME.background, borderRadius: 12, alignItems: 'center', justifyContent: 'center', minHeight: 60 },
     maskedText: { fontSize: 18, color: BASE_THEME.hint, letterSpacing: 2, textAlign: 'center', lineHeight: 28 },
     correctAnswerText: { fontSize: 18, color: BASE_THEME.success, fontWeight: '600', textAlign: 'center', lineHeight: 28 },
-
     actionButtonsContainer: { flexDirection: 'column', gap: 12 },
     actionBtn: { paddingVertical: 14, borderRadius: 12, justifyContent: 'center', alignItems: 'center', flexDirection: 'row' },
-    btnPrimary: { backgroundColor: LEVEL_THEMES.DEFAULT.primary, shadowColor: LEVEL_THEMES.DEFAULT.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, elevation: 3 },
-    btnSecondary: { backgroundColor: '#FFF', borderWidth: 1, borderColor: LEVEL_THEMES.DEFAULT.primary },
-    btnSuccess: { backgroundColor: BASE_THEME.success, shadowColor: BASE_THEME.success, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, elevation: 3 },
+    btnPrimary: { elevation: 3 },
+    btnSecondary: { backgroundColor: '#FFF', borderWidth: 1 },
+    btnSuccess: { backgroundColor: BASE_THEME.success, elevation: 3 },
     actionBtnText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-
     transcriptSection: { marginTop: 10 },
     sectionHeader: { fontSize: 16, fontWeight: 'bold', color: BASE_THEME.textDark, marginBottom: 15, paddingLeft: 5 },
     transcriptItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: BASE_THEME.cardBg, padding: 15, borderRadius: 12, marginBottom: 10, borderWidth: 1, borderColor: '#F5F5F5' },
