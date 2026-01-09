@@ -7,6 +7,8 @@ import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navig
 import * as Progress from 'react-native-progress';
 import { AuthStackParamList } from '../../../navigation/AuthStack';
 import { EnglishVocabularyTheoryResponse } from '../../../types/response/VocabularyResponse';
+import userProgressService from '../../../services/userProgressService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Định nghĩa kiểu Route
 type VocabularyPracticeRouteProp = RouteProp<AuthStackParamList, 'VocabularyPractice'>;
@@ -121,7 +123,7 @@ const VocabularyPracticeScreen: React.FC = () => {
         setSelectedOption(option);
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         if (!selectedOption) return;
 
         if (!isChecked) {
@@ -142,6 +144,13 @@ const VocabularyPracticeScreen: React.FC = () => {
                 setIsChecked(false);
             } else {
                 if (score >= 6) {
+                    const userIdString = await AsyncStorage.getItem("userId");
+                    if (!userIdString) {
+                        Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng.");
+                        return;
+                    }
+                    const userId = Number(userIdString);
+                    await userProgressService.updateUserProgress({ userId: userId, lessonId: lessonId, section: 2 });
                     Alert.alert(
                         "Chúc mừng!",
                         `Bạn đã trả lời đúng ${score}/${questions.length} câu. Bạn đã đủ điều kiện để học Ngữ pháp. Tuy nhiên hãy ôn luyện thường xuyên nhé!`,

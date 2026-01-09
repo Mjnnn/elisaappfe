@@ -7,6 +7,8 @@ import { AuthStackParamList } from '../../../navigation/AuthStack';
 import foxImage from '../../../../assets/images/logo/Elisa.png'; // Đảm bảo đường dẫn đúng
 import { EnglishGrammarResponse } from '../../../types/response/GrammarResponse';
 import grammarService from '../../../services/grammarService';
+import userProgressService from '../../../services/userProgressService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Định nghĩa kiểu Route
 type GrammarScreenRouteProp = RouteProp<AuthStackParamList, 'GrammarScreen'>;
@@ -114,8 +116,16 @@ const GrammarScreen: React.FC = () => {
     }, [lessonId]);
 
 
-    const handleComplete = () => {
+    const handleComplete = async () => {
         console.log("GrammarSection: ", { section });
+        const userIdString = await AsyncStorage.getItem("userId");
+        if (!userIdString) {
+            Alert.alert("Lỗi", "Không tìm thấy thông tin người dùng.");
+            return;
+        }
+        const userId = Number(userIdString);
+        await userProgressService.updateUserProgress({ userId: userId, lessonId: lessonId, section: 3 });
+
         navigation.navigate('ExerciseLoading', {
             lessonId: lessonId,
             lessonTitle: lessonTitle,

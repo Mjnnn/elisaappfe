@@ -221,7 +221,22 @@ const LearningPath = forwardRef<LearningPathHandle, {}>((props, ref) => {
 
     const handleNodePress = async (node: RenderedNode) => {
         if (node.type === 'lesson') {
-            navigation.navigate('LessonLoading', { lessonId: node.id, lessonTitle: node.title, section: 1, targetRoute: 'VocabularyScreen' });
+            if (userProgress && userProgress.lessonId > node.id) {
+                navigation.navigate('LessonLoading', { lessonId: node.id, lessonTitle: node.title, section: 1, targetRoute: 'VocabularyScreen' });
+            } else if (userProgress && userProgress.lessonId === node.id) {
+                let targetRoute = 'VocabularyScreen';
+                if (currentSection == 1) {
+                    navigation.navigate('LessonLoading', { lessonId: node.id, lessonTitle: node.title, section: currentSection, targetRoute: 'VocabularyScreen' });
+                } else if (currentSection == 2) {
+                    targetRoute = 'GrammarScreen';
+                    navigation.navigate('LessonLoading', { lessonId: node.id, lessonTitle: node.title, section: currentSection, targetRoute: 'GrammarScreen' });
+                } else if (currentSection == 3) {
+                    targetRoute = 'ExerciseLoading';
+                    navigation.navigate('ExerciseLoading', { lessonId: node.id, lessonTitle: node.title, section: currentSection, targetRoute: 'ExerciseScreen' });
+                }
+            }
+
+
         } else if (node.type === 'treasure') {
             if (node.status === 'active') {
                 try {
