@@ -13,7 +13,7 @@ interface SelfStudyBottomBarProps {
 
 const SelfStudyBottomBar: React.FC<SelfStudyBottomBarProps> = ({
   activeTab = "Home",
-  onTabPress = () => {},
+  onTabPress = () => { },
 }) => {
   const navigation = useNavigation<any>();
 

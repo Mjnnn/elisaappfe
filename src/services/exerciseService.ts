@@ -89,8 +89,7 @@ const exerciseService = {
 ): Promise<AxiosResponse<EnglishListeningDictationResponse>> => {
     const formData = new FormData();
     formData.append('file', file);
-    const jsonBlob = new Blob([JSON.stringify(data)], { type: "application/json" });
-    formData.append('data', jsonBlob);
+    formData.append('data', JSON.stringify(data));
 
     // 3. Gửi request
     return apiService.post(

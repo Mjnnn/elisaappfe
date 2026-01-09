@@ -5,7 +5,7 @@
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
-    "ios-real": "EXPO_PACKAGER_HOSTNAME=192.168.186.156 npx expo start",
+    "ios-real": "EXPO_PACKAGER_HOSTNAME=192.168.170.93 npx expo start",
     "ios": "expo start --ios",
     "web": "expo start --web"
   },

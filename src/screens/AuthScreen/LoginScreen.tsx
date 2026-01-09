@@ -8,7 +8,8 @@ import {
   ScrollView,
   Platform,
   Image,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert // Thêm Alert nếu bạn muốn dùng song song
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
@@ -20,7 +21,7 @@ import Toast from 'react-native-toast-message';
 import foxImage from '../../../assets/images/logo/Elisa.png';
 import { AuthStackParamList } from '../../navigation/AuthStack';
 
-// ✅ Import đúng authService (không phải userService)
+// ✅ Import đúng authService
 import authService from '../../services/authService';
 
 type LoginScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'Login'>;
@@ -39,7 +40,6 @@ const LoginScreen: React.FC = () => {
 
   const navigation = useNavigation<LoginScreenNavigationProp>();
 
-  // ⭐ Login API
   const handleLogin = async () => {
     if (!email || !password) {
       alert("Vui lòng nhập email và mật khẩu!");
@@ -48,49 +48,28 @@ const LoginScreen: React.FC = () => {
 
     try {
       setLoading(true);
-
-      const response = await authService.login({
-        email: email,
-        password: password
-      });
-
+      const response = await authService.login({ email, password });
       const data = response.data;
-      console.log("Login success:", data);
 
-      // ✅ Lưu session
       await AsyncStorage.setItem("userId", String(data.userId));
       await AsyncStorage.setItem("email", data.email);
       await AsyncStorage.setItem("fullName", data.fullName);
       await AsyncStorage.setItem("role", data.role);
 
       Toast.show({
-        type: 'success', // 👈 Loại thông báo có icon thành công
-
-        // Tiêu đề lớn
+        type: 'success',
         text1: '🎉 Đăng nhập thành công!',
-
-        // Thời gian hiển thị (mili giây)
         visibilityTime: 1000,
-
-        // Vị trí
         position: 'top',
         topOffset: 80,
       });
 
       if (data.role === 'USER') {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'AppTabs' }],
-        });
+        navigation.reset({ index: 0, routes: [{ name: 'AppTabs' }] });
       } else if (data.role === 'TEACHER') {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'AppTabTeacher' }],
-        });
+        navigation.reset({ index: 0, routes: [{ name: 'AppTabTeacher' }] });
       }
-
     } catch (error: any) {
-      console.log("Login error:", error.response?.data || error);
       alert(error.response?.data?.message || "Đăng nhập thất bại!");
     } finally {
       setLoading(false);
@@ -101,18 +80,32 @@ const LoginScreen: React.FC = () => {
     navigation.navigate('Register');
   }
 
+  // ⭐ Logic mới bạn yêu cầu nằm ở đây:
   const handleSocialLogin = (platform: 'facebook' | 'google') => {
-    console.log(`Đăng nhập bằng ${platform} được nhấn`);
+    const platformName = platform === 'facebook' ? 'Facebook' : 'Google';
+
+    // Hiển thị Alert hệ thống sinh động hơn với Emoji
+    Alert.alert(
+      "🛠️ THÔNG BÁO BẢO TRÌ",
+      `Chào bạn, chức năng đăng nhập bằng ${platformName} hiện tại đang được nhà phát triển tạm ngưng để nâng cấp hệ thống.\n\n✨ Bạn hãy vui lòng quay lại sau khi có thông báo mới nhất từ chúng tôi nhé!`,
+      [{ text: "Đã hiểu, tôi sẽ đợi! 🙌", style: "default" }],
+      { cancelable: true }
+    );
+
+    // Đồng thời bắn thêm một Toast để tăng hiệu ứng thị giác
+    Toast.show({
+      type: 'info',
+      text1: '⚡ Hệ thống đang nâng cấp',
+      text2: 'Vui lòng sử dụng tài khoản email để đăng nhập.',
+      position: 'bottom',
+      bottomOffset: 50,
+      visibilityTime: 4000,
+    });
   };
 
   const handleGoBack = () => {
-    // Kiểm tra xem có thể quay lại không
     if (navigation.canGoBack()) {
       navigation.goBack();
-    } else {
-      console.log("Không còn màn hình nào phía trước để quay lại.");
-      // Tùy chọn: Nếu không quay lại được thì đưa về Trang chủ (để user không bị kẹt)
-      // navigation.navigate('AppTabs'); 
     }
   };
 
@@ -120,7 +113,6 @@ const LoginScreen: React.FC = () => {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
 
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleGoBack} style={styles.closeButton}>
             <Ionicons name="close-outline" size={30} color={COLOR_TEXT} />
@@ -128,7 +120,6 @@ const LoginScreen: React.FC = () => {
           <Text style={styles.headerTitle}>Đăng nhập</Text>
         </View>
 
-        {/* Input */}
         <View style={styles.inputGroup}>
           <Image source={foxImage} style={styles.logo} resizeMode="contain" />
 
@@ -159,14 +150,9 @@ const LoginScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Buttons */}
         <View style={styles.actionSection}>
           <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.loginButtonText}>ĐĂNG NHẬP</Text>
-            )}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginButtonText}>ĐĂNG NHẬP</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={handleNavigateToRegister}>
@@ -180,7 +166,6 @@ const LoginScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Social Login */}
         <View style={styles.footer}>
           <View style={styles.socialRow}>
             <TouchableOpacity
@@ -213,7 +198,7 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     marginTop: 10,
-    marginBottom: 10, // Đẩy khu vực xã hội xuống
+    marginBottom: 10,
   },
   registerLinkHighlight: {
     color: COLOR_PRIMARY,

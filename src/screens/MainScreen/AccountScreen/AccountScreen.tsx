@@ -221,9 +221,10 @@ const AccountScreen = () => {
                     navigation.getParent()?.dispatch(
                         CommonActions.reset({
                             index: 0,
-                            routes: [{ name: 'Login' }],
+                            routes: [{ name: "Login" }],
                         })
                     );
+                    navigation.navigate("Login" as never);
                 }
             }
         ]);

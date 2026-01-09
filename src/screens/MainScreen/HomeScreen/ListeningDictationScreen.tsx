@@ -14,10 +14,11 @@ import {
     TextInput,
     Keyboard,
     Modal,
-    Platform
+    Platform,
+    Vibration // 1. Thêm Vibration
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Audio } from 'expo-av'; // Thư viện âm thanh
+import { Audio } from 'expo-av';
 
 import exerciseService from '../../../services/exerciseService';
 import { EnglishListeningDictationResponse } from '../../../types/response/ExerciseResponse';
@@ -29,7 +30,6 @@ import sad from '../../../../assets/images/logo/Elisa_Sad.png';
 
 const { width } = Dimensions.get('window');
 
-// --- COLORS ---
 const COLORS = {
     primary: '#3B82F6',
     secondary: '#F5F7FA',
@@ -43,38 +43,50 @@ const COLORS = {
     borderDefault: '#E5E7EB',
     inputBg: '#F9FAFB',
     audioBtn: '#60A5FA',
-    disabledBtn: '#D1D5DB' // Màu xám cho nút disable
+    disabledBtn: '#D1D5DB'
 };
 
 const ListeningDictationScreen = ({ route, navigation }: any) => {
     const { lessonId, lessonTitle, section, currentScore } = route.params || {};
-    console.log("Điểm thử thách: phần ghép câu ", currentScore);
-    // --- STATE ---
+
     const [questions, setQuestions] = useState<EnglishListeningDictationResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [totalScore, setTotalScore] = useState(currentScore || 0);
 
-    // Audio & Input State
     const [sound, setSound] = useState<Audio.Sound | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [userInput, setUserInput] = useState('');
-
-    // NEW: State đếm số lần nghe
     const [playCount, setPlayCount] = useState(0);
     const MAX_PLAYS = 3;
 
-    // Status State
     const [status, setStatus] = useState<'idle' | 'correct' | 'wrong'>('idle');
     const [isFinished, setIsFinished] = useState(false);
     const [exitModalVisible, setExitModalVisible] = useState(false);
 
-    // --- ANIMATION REFS ---
     const progressAnim = useRef(new Animated.Value(0)).current;
     const fadeAnim = useRef(new Animated.Value(1)).current;
     const pulseAnim = useRef(new Animated.Value(1)).current;
 
-    // --- EFFECT: Load Data & Config Audio ---
+    // --- LOGIC ÂM THANH PHẢN HỒI ---
+    async function playFeedbackSound(isCorrect: boolean) {
+        try {
+            const { sound: feedbackSound } = await Audio.Sound.createAsync(
+                isCorrect
+                    ? require('../../../../assets/sounds/correct.mp3')
+                    : require('../../../../assets/sounds/wrong.mp3')
+            );
+            await feedbackSound.playAsync();
+            feedbackSound.setOnPlaybackStatusUpdate((status) => {
+                if (status.isLoaded && status.didJustFinish) {
+                    feedbackSound.unloadAsync();
+                }
+            });
+        } catch (error) {
+            console.log("Lỗi âm thanh phản hồi:", error);
+        }
+    }
+
     useEffect(() => {
         const configureAudio = async () => {
             try {
@@ -89,18 +101,13 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
                 console.log("Lỗi cấu hình Audio:", e);
             }
         };
-
         configureAudio();
         fetchQuestions();
-
         return () => {
-            if (sound) {
-                sound.unloadAsync();
-            }
+            if (sound) sound.unloadAsync();
         };
     }, []);
 
-    // Effect: Update Progress & Reset cho câu hỏi mới
     useEffect(() => {
         const stopSound = async () => {
             if (sound) {
@@ -117,21 +124,12 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
 
         if (questions.length > 0) {
             stopSound();
-
             setUserInput('');
             setStatus('idle');
             setIsPlaying(false);
-
-            // NEW: Reset số lần nghe khi qua câu mới
             setPlayCount(0);
-
             fadeAnim.setValue(0);
-            Animated.timing(fadeAnim, {
-                toValue: 1,
-                duration: 400,
-                useNativeDriver: true
-            }).start();
-
+            Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
             Animated.timing(progressAnim, {
                 toValue: (currentIndex + 1) / questions.length,
                 duration: 500,
@@ -140,7 +138,6 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
         }
     }, [currentIndex, questions]);
 
-    // Effect: Pulse Animation
     useEffect(() => {
         if (isPlaying) {
             Animated.loop(
@@ -162,44 +159,29 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
                 setQuestions(response.data);
             }
         } catch (error) {
-            console.log("Lỗi tải câu hỏi nghe:", error);
             Alert.alert("Lỗi", "Không thể tải bài tập nghe.");
         } finally {
             setLoading(false);
         }
     };
 
-    // --- AUDIO LOGIC (UPDATED: Limit plays) ---
     const handlePlayAudio = async () => {
         const currentQ = questions[currentIndex];
         if (!currentQ.audioUrl) return;
-
-        // NEW: Kiểm tra giới hạn số lần nghe
-        // Nếu không đang phát (tức là muốn bắt đầu nghe) và đã hết lượt
-        if (!isPlaying && playCount >= MAX_PLAYS) {
-            // Có thể Alert hoặc chỉ disable nút (đã xử lý ở UI)
-            return;
-        }
+        if (!isPlaying && playCount >= MAX_PLAYS) return;
 
         try {
             if (sound) {
                 const status = await sound.getStatusAsync();
-
                 if (status.isLoaded) {
                     if (status.isPlaying) {
-                        // Đang phát thì cho phép Pause (không tính là 1 lần nghe mới)
                         await sound.pauseAsync();
                         setIsPlaying(false);
                     } else {
-                        // Chuẩn bị phát tiếp hoặc phát lại -> Tính là 1 lần nghe
-                        if (playCount >= MAX_PLAYS) return; // Check lại cho chắc chắn
-                        setPlayCount(prev => prev + 1); // Tăng đếm
-
-                        if (status.positionMillis === status.durationMillis) {
-                            await sound.replayAsync();
-                        } else {
-                            await sound.playAsync();
-                        }
+                        if (playCount >= MAX_PLAYS) return;
+                        setPlayCount(prev => prev + 1);
+                        if (status.positionMillis === status.durationMillis) await sound.replayAsync();
+                        else await sound.playAsync();
                         setIsPlaying(true);
                     }
                 } else {
@@ -209,35 +191,28 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
             }
 
             if (!sound) {
-                // Tải mới -> Tính là 1 lần nghe
                 if (playCount >= MAX_PLAYS) return;
-                setPlayCount(prev => prev + 1); // Tăng đếm
-
+                setPlayCount(prev => prev + 1);
                 const { sound: newSound } = await Audio.Sound.createAsync(
                     { uri: currentQ.audioUrl },
                     { shouldPlay: true }
                 );
                 setSound(newSound);
                 setIsPlaying(true);
-
                 newSound.setOnPlaybackStatusUpdate((status) => {
-                    if (status.isLoaded) {
-                        if (status.didJustFinish) {
-                            setIsPlaying(false);
-                            newSound.setPositionAsync(0);
-                        }
+                    if (status.isLoaded && status.didJustFinish) {
+                        setIsPlaying(false);
+                        newSound.setPositionAsync(0);
                     }
                 });
             }
         } catch (error) {
-            console.log("Audio Play Error:", error);
             setIsPlaying(false);
             setSound(null);
             Alert.alert("Lỗi Audio", "Không thể phát âm thanh này.");
         }
     };
 
-    // --- CHECK LOGIC ---
     const normalizeText = (text: string) => {
         return text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "").trim();
     };
@@ -245,15 +220,17 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
     const handleCheck = () => {
         Keyboard.dismiss();
         const currentQ = questions[currentIndex];
-
         const userClean = normalizeText(userInput);
         const transcriptClean = normalizeText(currentQ.transcript);
 
         if (userClean === transcriptClean) {
             setStatus('correct');
             setTotalScore((prev: number) => prev + 5);
+            playFeedbackSound(true); // 3. Phát âm thanh ĐÚNG
         } else {
             setStatus('wrong');
+            playFeedbackSound(false); // 4. Phát âm thanh SAI
+            Vibration.vibrate([0, 100, 100, 100]); // 5. Rung máy
         }
     };
 
@@ -279,10 +256,7 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
     const confirmExit = async () => {
         setExitModalVisible(false);
         if (sound) {
-            try {
-                await sound.stopAsync();
-                await sound.unloadAsync();
-            } catch (e) { }
+            try { await sound.stopAsync(); await sound.unloadAsync(); } catch (e) { }
         }
         navigation.navigate('AppTabs');
     };
@@ -295,63 +269,27 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
         return { image: normal, message: hint };
     };
 
-    // --- RENDER HELPERS ---
-    // Biến kiểm tra xem có nên disable nút Play không
-    const isPlayDisabled = !isPlaying && playCount >= MAX_PLAYS;
-
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-            </View>
-        );
-    }
+    if (loading) return <View style={styles.loadingContainer}><ActivityIndicator size="large" color={COLORS.primary} /></View>;
 
     if (isFinished) {
         return (
             <View style={styles.resultContainer}>
-                <Modal
-                    animationType="fade"
-                    transparent={true}
-                    visible={exitModalVisible}
-                    onRequestClose={cancelExit}
-                >
+                <Modal animationType="fade" transparent={true} visible={exitModalVisible} onRequestClose={cancelExit}>
                     <View style={styles.modalOverlay}>
                         <View style={styles.modalContent}>
-                            <View style={styles.modalIconContainer}>
-                                <Text style={styles.modalIconText}>!</Text>
-                            </View>
+                            <View style={styles.modalIconContainer}><Text style={styles.modalIconText}>!</Text></View>
                             <Text style={styles.modalTitle}>Khoan đã!</Text>
-                            <Text style={styles.modalBody}>
-                                Nếu bạn rời đi bây giờ, toàn bộ tiến độ thử thách này sẽ bị mất và khi bạn thử thách lại thì bạn sẽ làm lại từ đầu. Bạn có chắc chắn muốn thoát không?
-                            </Text>
-                            <TouchableOpacity style={styles.modalButtonPrimary} onPress={cancelExit}>
-                                <Text style={styles.modalButtonPrimaryText}>TIẾP TỤC THỬ THÁCH</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.modalButtonSecondary} onPress={confirmExit}>
-                                <Text style={styles.modalButtonSecondaryText}>DỪNG LẠI VÀ THOÁT</Text>
-                            </TouchableOpacity>
+                            <Text style={styles.modalBody}>Nếu bạn rời đi bây giờ, toàn bộ tiến độ thử thách này sẽ bị mất...</Text>
+                            <TouchableOpacity style={styles.modalButtonPrimary} onPress={cancelExit}><Text style={styles.modalButtonPrimaryText}>TIẾP TỤC THỬ THÁCH</Text></TouchableOpacity>
+                            <TouchableOpacity style={styles.modalButtonSecondary} onPress={confirmExit}><Text style={styles.modalButtonSecondaryText}>DỪNG LẠI VÀ THOÁT</Text></TouchableOpacity>
                         </View>
                     </View>
                 </Modal>
-
                 <View style={styles.resultCard}>
                     <Text style={{ fontSize: 60 }}>🎉</Text>
                     <Text style={styles.resultTitle}>Hoàn thành thử thách 3!</Text>
-                    <Text style={styles.resultScore}>
-                        Bạn đã hoàn thành phần nghe chép.
-                    </Text>
-
-                    <TouchableOpacity style={styles.btnFinish} onPress={handleNextChallenge}>
-                        <Text style={styles.btnFinishText}>Thử thách tiếp theo</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.btnFinish, { backgroundColor: 'transparent', marginTop: 15, borderWidth: 2, borderColor: '#E5E7EB', elevation: 0 }]}
-                        onPress={handleBackToCoursePress}
-                    >
-                        <Text style={{ color: COLORS.subText, fontWeight: 'bold', fontSize: 16 }}>Quay lại khoá học</Text>
-                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.btnFinish} onPress={handleNextChallenge}><Text style={styles.btnFinishText}>Thử thách tiếp theo</Text></TouchableOpacity>
+                    <TouchableOpacity style={[styles.btnFinish, { backgroundColor: 'transparent', marginTop: 15, borderWidth: 2, borderColor: '#E5E7EB', elevation: 0 }]} onPress={handleBackToCoursePress}><Text style={{ color: COLORS.subText, fontWeight: 'bold', fontSize: 16 }}>Quay lại khoá học</Text></TouchableOpacity>
                 </View>
             </View>
         );
@@ -359,81 +297,41 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
 
     const currentQ = questions[currentIndex];
     const mascot = getMascotState();
+    const isPlayDisabled = !isPlaying && playCount >= MAX_PLAYS;
 
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
-
             <View style={styles.headerContainer}>
                 <View style={styles.progressBarBg}>
-                    <Animated.View
-                        style={[
-                            styles.progressBarFill,
-                            {
-                                width: progressAnim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: ['0%', '100%']
-                                })
-                            }
-                        ]}
-                    />
+                    <Animated.View style={[styles.progressBarFill, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
                 </View>
-                <Text style={styles.progressText}>
-                    Câu {currentIndex + 1}/{questions.length}
-                </Text>
+                <Text style={styles.progressText}>Câu {currentIndex + 1}/{questions.length}</Text>
             </View>
 
             <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
                 <Animated.View style={[styles.contentContainer, { opacity: fadeAnim }]}>
-
                     <View style={styles.mascotContainer}>
                         <Image source={mascot.image} style={styles.mascotImage} resizeMode="contain" />
                         <View style={styles.bubbleWrapper}>
-                            <View style={styles.speechBubble}>
-                                <Text style={styles.speechText}>{mascot.message}</Text>
-                            </View>
+                            <View style={styles.speechBubble}><Text style={styles.speechText}>{mascot.message}</Text></View>
                             <View style={styles.bubbleArrow} />
                         </View>
                     </View>
-
                     <Text style={styles.questionTitle}>Nghe và viết lại câu hoàn chỉnh:</Text>
-
-                    {/* AUDIO PLAYER (Updated UI for disabled state) */}
                     <View style={styles.audioContainer}>
-                        <TouchableOpacity
-                            onPress={handlePlayAudio}
-                            activeOpacity={0.7}
-                            disabled={isPlayDisabled} // Disable touch nếu hết lượt và không đang phát
-                        >
-                            <Animated.View
-                                style={[
-                                    styles.audioButton,
-                                    // Thay đổi màu nền nếu bị disable
-                                    isPlayDisabled && { backgroundColor: COLORS.disabledBtn, shadowOpacity: 0 },
-                                    { transform: [{ scale: pulseAnim }] }
-                                ]}
-                            >
+                        <TouchableOpacity onPress={handlePlayAudio} activeOpacity={0.7} disabled={isPlayDisabled}>
+                            <Animated.View style={[styles.audioButton, isPlayDisabled && { backgroundColor: COLORS.disabledBtn, shadowOpacity: 0 }, { transform: [{ scale: pulseAnim }] }]}>
                                 <Text style={styles.audioIcon}>{isPlaying ? '❚❚' : '▶'}</Text>
                             </Animated.View>
                         </TouchableOpacity>
-
-                        {/* Text hiển thị số lần nghe còn lại */}
                         <Text style={[styles.tapToListenText, isPlayDisabled && { color: COLORS.error }]}>
-                            {isPlaying
-                                ? 'Đang phát...'
-                                : isPlayDisabled
-                                    ? 'Hết lượt nghe'
-                                    : `Nhấn để nghe (Còn ${MAX_PLAYS - playCount} lần)`}
+                            {isPlaying ? 'Đang phát...' : isPlayDisabled ? 'Hết lượt nghe' : `Nhấn để nghe (Còn ${MAX_PLAYS - playCount} lần)`}
                         </Text>
                     </View>
-
                     <View style={styles.inputContainer}>
                         <TextInput
-                            style={[
-                                styles.textInput,
-                                status === 'correct' && { borderColor: COLORS.success, backgroundColor: '#F0FDF4' },
-                                status === 'wrong' && { borderColor: COLORS.error, backgroundColor: '#FEF2F2' }
-                            ]}
+                            style={[styles.textInput, status === 'correct' && { borderColor: COLORS.success, backgroundColor: '#F0FDF4' }, status === 'wrong' && { borderColor: COLORS.error, backgroundColor: '#FEF2F2' }]}
                             placeholder="Nhập nội dung bạn nghe được..."
                             placeholderTextColor="#9CA3AF"
                             multiline
@@ -442,61 +340,27 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
                             editable={status === 'idle'}
                         />
                     </View>
-
                 </Animated.View>
             </ScrollView>
 
             {status === 'idle' ? (
                 <View style={styles.footerIdle}>
-                    <TouchableOpacity
-                        style={[
-                            styles.btnCheck,
-                            { backgroundColor: userInput.length === 0 ? '#E5E7EB' : COLORS.primary }
-                        ]}
-                        onPress={handleCheck}
-                        disabled={userInput.length === 0}
-                    >
-                        <Text style={[
-                            styles.btnCheckText,
-                            { color: userInput.length === 0 ? '#9CA3AF' : COLORS.white }
-                        ]}>KIỂM TRA</Text>
+                    <TouchableOpacity style={[styles.btnCheck, { backgroundColor: userInput.length === 0 ? '#E5E7EB' : COLORS.primary }]} onPress={handleCheck} disabled={userInput.length === 0}>
+                        <Text style={[styles.btnCheckText, { color: userInput.length === 0 ? '#9CA3AF' : COLORS.white }]}>KIỂM TRA</Text>
                     </TouchableOpacity>
                 </View>
             ) : (
-                <View style={[
-                    styles.footerFeedback,
-                    { backgroundColor: status === 'correct' ? COLORS.successBg : COLORS.errorBg }
-                ]}>
+                <View style={[styles.footerFeedback, { backgroundColor: status === 'correct' ? COLORS.successBg : COLORS.errorBg }]}>
                     <View style={styles.feedbackHeader}>
-                        <View style={[
-                            styles.iconCircle,
-                            { backgroundColor: status === 'correct' ? COLORS.success : COLORS.error }
-                        ]}>
-                            <Text style={styles.iconText}>{status === 'correct' ? '✓' : '✕'}</Text>
-                        </View>
+                        <View style={[styles.iconCircle, { backgroundColor: status === 'correct' ? COLORS.success : COLORS.error }]}><Text style={styles.iconText}>{status === 'correct' ? '✓' : '✕'}</Text></View>
                         <View style={{ marginLeft: 12, flex: 1 }}>
-                            <Text style={[
-                                styles.feedbackTitle,
-                                { color: status === 'correct' ? COLORS.success : COLORS.error }
-                            ]}>
-                                {status === 'correct' ? 'Chính xác! 🎉"' : 'Chưa đúng rồi! 😢'}
-                            </Text>
+                            <Text style={[styles.feedbackTitle, { color: status === 'correct' ? COLORS.success : COLORS.error }]}>{status === 'correct' ? 'Chính xác! 🎉' : 'Chưa đúng rồi! 😢'}</Text>
                             {status === 'wrong' && (
-                                <View>
-                                    <Text style={styles.correctLabel}>Đáp án đúng:</Text>
-                                    <Text style={styles.correctText}>{currentQ.transcript}</Text>
-                                </View>
+                                <View><Text style={styles.correctLabel}>Đáp án đúng:</Text><Text style={styles.correctText}>{currentQ.transcript}</Text></View>
                             )}
                         </View>
                     </View>
-
-                    <TouchableOpacity
-                        style={[
-                            styles.btnNext,
-                            { backgroundColor: status === 'correct' ? COLORS.success : COLORS.error }
-                        ]}
-                        onPress={handleNext}
-                    >
+                    <TouchableOpacity style={[styles.btnNext, { backgroundColor: status === 'correct' ? COLORS.success : COLORS.error }]} onPress={handleNext}>
                         <Text style={styles.btnNextText}>TIẾP TỤC</Text>
                     </TouchableOpacity>
                 </View>
@@ -505,15 +369,14 @@ const ListeningDictationScreen = ({ route, navigation }: any) => {
     );
 };
 
+// --- STYLES GIỮ NGUYÊN ---
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.white },
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-
     headerContainer: { paddingHorizontal: 20, paddingTop: 10, backgroundColor: COLORS.white },
     progressBarBg: { height: 12, backgroundColor: '#E5E5E5', borderRadius: 8, overflow: 'hidden', width: '100%' },
     progressBarFill: { height: '100%', backgroundColor: COLORS.primary, borderRadius: 8 },
     progressText: { marginTop: 10, textAlign: 'center', color: COLORS.subText, fontWeight: 'bold', fontSize: 14 },
-
     contentContainer: { padding: 20 },
     mascotContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, marginTop: 10 },
     mascotImage: { width: 100, height: 100, marginRight: 10 },
@@ -521,35 +384,16 @@ const styles = StyleSheet.create({
     speechBubble: { flex: 1, backgroundColor: COLORS.white, borderWidth: 2, borderColor: '#E5E7EB', borderRadius: 16, padding: 12 },
     speechText: { color: '#4B5563', fontSize: 15, fontWeight: '600' },
     bubbleArrow: { position: 'absolute', left: -8, width: 16, height: 16, backgroundColor: COLORS.white, borderBottomWidth: 2, borderLeftWidth: 2, borderColor: '#E5E7EB', transform: [{ rotate: '45deg' }] },
-
     questionTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.text, marginBottom: 20 },
-
     audioContainer: { alignItems: 'center', marginBottom: 30 },
-    audioButton: {
-        width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.primary,
-        justifyContent: 'center', alignItems: 'center',
-        shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5
-    },
+    audioButton: { width: 80, height: 80, borderRadius: 40, backgroundColor: COLORS.primary, justifyContent: 'center', alignItems: 'center', shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 },
     audioIcon: { color: 'white', fontSize: 30, fontWeight: 'bold' },
     tapToListenText: { marginTop: 10, color: COLORS.subText, fontSize: 14, fontWeight: '600' },
-
     inputContainer: { marginBottom: 20 },
-    textInput: {
-        backgroundColor: COLORS.inputBg,
-        borderWidth: 2,
-        borderColor: COLORS.borderDefault,
-        borderRadius: 16,
-        padding: 16,
-        fontSize: 18,
-        color: COLORS.text,
-        minHeight: 120,
-        textAlignVertical: 'top'
-    },
-
+    textInput: { backgroundColor: COLORS.inputBg, borderWidth: 2, borderColor: COLORS.borderDefault, borderRadius: 16, padding: 16, fontSize: 18, color: COLORS.text, minHeight: 120, textAlignVertical: 'top' },
     footerIdle: { padding: 20, borderTopWidth: 1, borderColor: '#F3F4F6' },
     btnCheck: { paddingVertical: 16, borderRadius: 16, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: 'rgba(0,0,0,0.1)' },
     btnCheckText: { fontSize: 16, fontWeight: '800', textTransform: 'uppercase' },
-
     footerFeedback: { padding: 24, paddingBottom: 34 },
     feedbackHeader: { flexDirection: 'row', marginBottom: 20, alignItems: 'flex-start' },
     iconCircle: { width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginTop: 2 },
@@ -559,14 +403,12 @@ const styles = StyleSheet.create({
     correctText: { color: COLORS.error, fontSize: 15, marginTop: 2 },
     btnNext: { paddingVertical: 16, borderRadius: 16, alignItems: 'center', width: '100%', borderBottomWidth: 4, borderBottomColor: 'rgba(0,0,0,0.1)' },
     btnNextText: { color: COLORS.white, fontSize: 16, fontWeight: '800', textTransform: 'uppercase' },
-
     resultContainer: { flex: 1, backgroundColor: COLORS.secondary, justifyContent: 'center', padding: 20 },
     resultCard: { backgroundColor: COLORS.white, borderRadius: 24, padding: 40, alignItems: 'center', elevation: 5 },
     resultTitle: { fontSize: 24, fontWeight: 'bold', color: COLORS.text, marginTop: 20, marginBottom: 10, textAlign: 'center' },
     resultScore: { fontSize: 18, color: COLORS.subText, marginBottom: 30, textAlign: 'center' },
     btnFinish: { backgroundColor: COLORS.primary, paddingVertical: 16, width: '100%', borderRadius: 30, alignItems: 'center', borderBottomWidth: 4, borderBottomColor: 'rgba(0,0,0,0.1)' },
     btnFinishText: { color: COLORS.white, fontWeight: 'bold', fontSize: 16 },
-
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
     modalContent: { backgroundColor: 'white', borderRadius: 20, padding: 25, alignItems: 'center', width: '100%', maxWidth: 350 },
     modalIconContainer: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FFE5E5', justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
